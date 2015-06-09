@@ -1,14 +1,18 @@
 #'@name cleanlab
 #'@title Clean lab data files
 #'@param proj string options are field, fieldbw, fieldfw, and meso
-#'@param pwpw string choice of all, sw, pw
+#'@param pwsw string choice of all, sw, pw
+#'@details EBs are discarded, only meso data has FDs
 #'
 
-cleanlab<-function(sumpath,proj="field",pwsw="all"){
+cleanlab<-function(sumpathlist,proj="field",pwsw="all"){
   #sumpath<-flist[9]
+  fulldt<-list()
+  for(j in sumpathlist){
+    #j<-sumpathlist[1]
     
-  dt1<-read.csv(sumpath,stringsAsFactors=F)
-  dt1<-dt1[dt1$SAMPLE_TYPE=="SAMP",][,c(3,4,8,19,21,22)]
+  dt1<-read.csv(j,stringsAsFactors=F)
+  dt1<-dt1[dt1$SAMPLE_TYPE=="SAMP"|dt1$SAMPLE_TYPE=="FD",][,c(3,4,8,19,21,22)]
   if(pwsw=="sw"){
     dt1<-dt1[dt1$MATRIX=="SW",]
   }
@@ -37,7 +41,11 @@ cleanlab<-function(sumpath,proj="field",pwsw="all"){
   dt1$date<-strftime(dt1$datetime,"%m/%d/%Y")
   
   library(reshape2)
-  dwide<-dcast(dt1,date + station + pwsw ~ test_name, value.var="value",add.missing=T,fun.aggregate=mean)
+    dwide<-dcast(dt1,date + station + pwsw ~ test_name, value.var="value",fun.aggregate=mean)
+    
+    #test<-paste(dt1[,"date"],dt1[,"station"],dt1[,"pwsw"])
+    #dt1[which(paste(dt1[,"date"],dt1[,"station"],dt1[,"pwsw"])==test[1]),]
+    #dwide[which(paste(dwide[,"date"],dwide[,"station"],dwide[,"pwsw"])==test[1]),]
   
   #choose project
   #proj="field"
@@ -60,8 +68,17 @@ cleanlab<-function(sumpath,proj="field",pwsw="all"){
       dproj[dproj$chamber>10&dproj$site=="FW","trt"]<-"treatment"
       dproj[is.na(dproj$trt),"trt"]<-"control"  
     }
+    
+    namestemp<-c("date","station","pwsw","ALKA","CL","DOC","LCOND","LPH","NH4","NOX","Salinity","SO4","TDN","TN","site","chamber","trt")
+    namesmiss<-which(is.na(match(namestemp,names(dproj))))
+    paddt<-data.frame(matrix(NA,ncol=length(namestemp[namesmiss]),nrow=nrow(dproj)))
+    names(paddt)<-namestemp[namesmiss]
+    dproj<-cbind(dproj,paddt)
+    dproj<-dproj[,match(namestemp,names(dproj))]
+    
+    fulldt[[which(j==sumpathlist)]]<-dproj
   }
-  
+###################################################  
   if(proj=="meso"){
     dprojsw<-dwide[nchar(dwide$station)==2&substring(dwide$station,1,1)=="C",]
     dproj<-dwide[nchar(dwide$station)<=5&nchar(dwide$station)>=4,]
@@ -127,9 +144,11 @@ sw$chamber<-NA
 pw<-pw[,match(names(pw),names(sw))]
 
 dproj<-rbind(pw,sw)
+fulldt[[which(j==sumpathlist)]]<-dproj
+  }
   }
       
-  dproj
+  do.call(rbind,fulldt)
 #     
 #   pw<-dt[dt$MATRIX=="PW",]
 #   bw.pw<-pw[pw$SITE=="BW",]
@@ -148,6 +167,7 @@ dproj<-rbind(pw,sw)
 
 #'@name cleanp
 #'@title clean phosphorus data
+#'@description averages FDs, strips EBs
 
 cleanp<-function(sumpath,pwsw="all"){
   dt1<-read.csv(sumpath,stringsAsFactors=F)
@@ -160,6 +180,8 @@ cleanp<-function(sumpath,pwsw="all"){
   
   names(dt1)<-tolower(names(dt1))
   names(dt1)[3]<-"pwsw"
+  
+  #test<-paste(")
   
   dt1<-dt1[nchar(dt1[,"date"])>0,]
   dsplit<-matrix(unlist(strsplit(dt1$date,"/",fixed=T)),ncol=3,byrow=3)
@@ -181,5 +203,20 @@ cleanp<-function(sumpath,pwsw="all"){
   dt1$date<-strftime(dt1$datetime,"%m/%d/%Y")
   dt1$date<-as.POSIXct(strptime(dt1$date,"%m/%d/%Y"))
   dt1<-dt1[dt1$chamber>0 & dt1$chamber<199,]
-  dt1[,c(1:3,6,7,10:13)]
+  dt1<-dt1[,c(1:3,6,7,10:13)]
+  
+  uid<-paste(dt1[,"date"],dt1[,"site"],dt1[,"pwsw"],dt1[,"chamber"],sep="")
+  #savedt1<-dt1
+  if(any(duplicated(uid))){
+    duplist<-unique(uid[duplicated(uid)])
+    
+    for(j in duplist){
+      #j<-duplist[2]
+      curdup<-which(uid==j)
+      dt1[curdup[1],5:ncol(dt1)]<-apply(dt1[curdup,5:ncol(dt1)],2,function(x) mean(x,na.rm=T))
+      dt1<-dt1[-curdup[2:length(curdup)],]
+      uid<-paste(dt1[,"date"],dt1[,"site"],dt1[,"pwsw"],dt1[,"chamber"],sep="")
+      }
+  }
+  dt1[order(dt1$date),]
 }

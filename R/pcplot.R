@@ -164,13 +164,13 @@ tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
   }
 }
 
-hstplot<-function(dt,params=names(dt)[c(7)],bwfw="fw",pwsw="sw"){
+hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
   #dt<-cfieldall
   parampos<-match(params,names(dt))
   dt$chamber<-as.numeric(as.character(dt$chamber))
-  dt$trt<-NA
-  dt[dt$chamber>9,"trt"]<-"treatment"
-  dt[is.na(dt$trt),"trt"]<-"control"
+  #dt$trt<-NA
+  #dt[dt$chamber>9,"trt"]<-"treatment"
+  #dt[is.na(dt$trt),"trt"]<-"control"
   
   if(bwfw=="bw"){
     dt<-dt[dt$site=="BW",]
@@ -198,7 +198,7 @@ hstplot<-function(dt,params=names(dt)[c(7)],bwfw="fw",pwsw="sw"){
     curdt<-dt[,c("date","chamber","trt",names(dt)[i])]
     xlab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
     
-    adt<-curdt[curdt$trt==unique(curdt$trt)[1],]
+    adt<-curdt[curdt$trt==unique(curdt$trt)[1],]#control
     ahist<-hist(adt[,4],plot=F)
     bdt<-curdt[curdt$trt==unique(curdt$trt)[2],]
     bhist<-hist(bdt[,4],plot=F)
@@ -227,7 +227,7 @@ hstplot<-function(dt,params=names(dt)[c(7)],bwfw="fw",pwsw="sw"){
     plot(ahist,xlim=xlim,ylim=ylim,col="black",xlab=xlab,main=toupper(paste(bwfw,pwsw," ",min(adt$date)," - ",max(adt$date),sep="")))
     plot(bhist,xlim=xlim,ylim=ylim,add=T,col="white")
     plot(overlap,xlim=xlim,ylim=ylim,add=T,col="darkgrey")
-    legend("topright",c("treatment","control"),col=c("white","black"),fill=c("black","white"))
+    legend("topright",c("treatment","control"),col=c("white","black"),fill=c("white","black"))
   }
 }
     

@@ -17,7 +17,11 @@
 source("R/cleanlab.R")
 #clean inputs
 flist<-list.files("inst/extdata/Raw/lab","*.csv",include.dirs=T,full.names=T)
+#sumpathlist<-flist[1]
+#names(cleanlab(flist[1],proj="field",pwsw="all"))
+#names(cleanlab(flist[2],proj="field",pwsw="all"))
 sumpathlist<-flist[1:2]
+clab<-cleanlab(sumpathlist,proj="field",pwsw="all")
 
 #sumpath<-flist[1]
 #clab<-cleanlab(sumpath=sumpath,proj="field",pwsw="all")
@@ -26,17 +30,18 @@ sumpathlist<-flist[1:2]
 #clab3<-clab
 
 #merge inputs
-if((ncol(clab2)-ncol(clab3))>0){
-  numdiff<-ncol(clab2)-ncol(clab3)
-  clab3[,(ncol(clab3)+1):(ncol(clab3)+numdiff)]<-NA
-  names(clab3)[(ncol(clab3)-(numdiff-1)):(ncol(clab3))]<-names(clab2)[is.na(match(names(clab2),names(clab3)))]
-  clab3<-clab3[,match(names(clab2),names(clab3))]
-  clab<-rbind(clab2,clab3)
-}else{
-  clab<-rbind(clab,clab2)
-}
+# if((ncol(clab2)-ncol(clab3))>0){
+#   numdiff<-ncol(clab2)-ncol(clab3)
+#   clab3[,(ncol(clab3)+1):(ncol(clab3)+numdiff)]<-NA
+#   names(clab3)[(ncol(clab3)-(numdiff-1)):(ncol(clab3))]<-names(clab2)[is.na(match(names(clab2),names(clab3)))]
+#   clab3<-clab3[,match(names(clab2),names(clab3))]
+#   clab<-rbind(clab2,clab3)
+# }else{
+#   clab<-rbind(clab,clab2)
+# }
 
 #merge P data
+source("R/cleanlab.R")
 sumpath<-flist[3]
 cp<-cleanp(sumpath)
 claball<-merge(clab,cp,by=c("site","chamber","date","pwsw"),all.x=TRUE)
@@ -68,12 +73,12 @@ if(any(cfieldall$site=="BW")){
 #write.csv(cfieldall,"inst/extdata/fieldallv4.csv")
 
 #4. plot field-lab/onsite data####
-#cfieldall<-read.csv("inst/extdata/fieldallv2.csv")[,-1]
+#cfieldall<-read.csv("inst/extdata/fieldallv4.csv")[,-1]
 #cfieldall$date<-as.POSIXct(cfieldall$date)
 source("R/pcplot.R")
 scplot(cfieldall,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="FW and BW",pwsw="sw")#scatterplots
 bxplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20,22:25)],bwfw="bw",pwsw="pw",notch=T)#boxplots
-tsplot(cfieldall,params=names(cfieldall)[c(7)],bwfw="bw",pwsw="pw",tofile=FALSE)#timeseries
+tsplot(cfieldall,params=names(cfieldall)[c(7)],bwfw="fw",pwsw="pw",tofile=FALSE)#timeseries
 hstplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20)],bwfw="bw",pwsw="pw")#overlapping histograms
 
 #4a. statistical tests for treatment effect (in development)####
