@@ -1,7 +1,7 @@
-#cleanlab.R
+#'@name cleanlab
+#'@title Clean lab data files
 #'@param proj string options are field, fieldbw, fieldfw, and meso
 #'@param pwpw string choice of all, sw, pw
-#'
 #'
 
 cleanlab<-function(sumpath,proj="field",pwsw="all"){
@@ -42,24 +42,31 @@ cleanlab<-function(sumpath,proj="field",pwsw="all"){
   #choose project
   #proj="field"
   statsplit<-strsplit(dwide$station,"-")
+  dwide$date<-as.POSIXct(strptime(dwide$date,"%m/%d/%Y"))
   
   if(proj=="field"){
     dproj<-dwide[nchar(dwide$station)>5,]
     
     dproj$site<-do.call(rbind,strsplit(dproj$station,"-"))[,1]
     dproj$chamber<-do.call(rbind,strsplit(dproj$station,"-"))[,3]
-    dproj$date<-as.POSIXct(strptime(dproj$date,"%m/%d/%Y"))
     dproj$trt<-NA
     dproj<-dproj[nchar(dproj$chamber)<3,]
     dproj$chamber<-as.numeric(as.character(dproj$chamber))
-    dproj[dproj$chamber>9,"trt"]<-"treatment"
-    dproj[is.na(dproj$trt),"trt"]<-"control"
+    if(any(dproj$site=="BW")){
+      dproj[dproj$chamber>9&dproj$site=="BW","trt"]<-"treatment"
+      dproj[is.na(dproj$trt),"trt"]<-"control"  
+    }
+    if(any(dproj$site=="BW")){
+      dproj[dproj$chamber>10&dproj$site=="FW","trt"]<-"treatment"
+      dproj[is.na(dproj$trt),"trt"]<-"control"  
+    }
   }
   
   if(proj=="meso"){
-    
+    dprojsw<-dwide[nchar(dwide$station)==2&substring(dwide$station,1,1)=="C",]
     dproj<-dwide[nchar(dwide$station)<=5&nchar(dwide$station)>=4,]
     dproj<-dproj[dproj$station!="S-199",]
+    dprojsw$site<-substring(dprojsw$station,2,2) #site = crypt
     dproj$site<-substring(dproj$station,2,2) #site = crypt
     dproj$chamber<-sapply(dproj$station,function(x) substring(x,4,nchar(x))) #chamber = core number
    
@@ -100,18 +107,20 @@ swkey<-read.table(header=FALSE,text="
                   6 amb
                   ")
 
-dproj$trt<-NA
-for(i in 1:nrow(dproj)){
-  #i<-2
-  if(nchar(dproj[i,"station"]))
-  dproj[i,"trt"]<-key[match(dproj[i,"chamber"],key[,1]),2]
-}
+#not sure what the point of this code block is...
+# dproj$trt<-NA
+# for(i in 1:nrow(dproj)){
+#   #i<-2
+#   if(nchar(dproj[i,"station"]))
+#   dproj[i,"trt"]<-key[match(dproj[i,"chamber"],key[,1]),2]
+# }
 
 names(key)<-c("chamber","trt")
 names(swkey)<-c("site","trt")
-pw<-merge(key,pw)
-sw<-merge(swkey,sw)
-pw$site<-NA
+
+pw<-merge(key,dproj)
+sw<-merge(swkey,dprojsw)
+
 sw$chamber<-NA
 
 #pwsave<-pw
