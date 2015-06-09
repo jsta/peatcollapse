@@ -51,7 +51,7 @@ cleanlab<-function(sumpathlist,proj="field",pwsw="all"){
   #proj="field"
   statsplit<-strsplit(dwide$station,"-")
   dwide$date<-as.POSIXct(strptime(dwide$date,"%m/%d/%Y"))
-  
+###########################################################  
   if(proj=="field"){
     dproj<-dwide[nchar(dwide$station)>5,]
     
@@ -89,30 +89,30 @@ cleanlab<-function(sumpathlist,proj="field",pwsw="all"){
    
     #load treatment keys
     key<-read.table(header=FALSE,text="
-                    1 elevinun                    
-                    3 elevinun
-                    10 elevinun
-                    12 elevinun
-                    17 elevinun
-                    19 elevinun
-                    2 elevcont
-                    4 elevcont
-                    9 elevcont
-                    11 elevcont
-                    18 elevcont
-                    20 elevcont
-                    6 ambinun
-                    8 ambinun
-                    14 ambinun
-                    16 ambinun
-                    22 ambinun
-                    24 ambinun
-                    5 ambcont
-                    7 ambcont
-                    13 ambcont
-                    15 ambcont
-                    21 ambcont
-                    23 ambcont
+                    1 elevcont                    
+                    3 elevcont
+                    10 elevcont
+                    12 elevcont
+                    17 elevcont
+                    19 elevcont
+                    2 elevinun
+                    4 elevinun
+                    9 elevinun
+                    11 elevinun
+                    18 elevinun
+                    20 elevinun
+                    6 ambcont
+                    8 ambcont
+                    14 ambcont
+                    16 ambcont
+                    22 ambcont
+                    24 ambcont
+                    5 ambinun
+                    7 ambinun
+                    13 ambinun
+                    15 ambinun
+                    21 ambinun
+                    23 ambinun
                     ")
 
 swkey<-read.table(header=FALSE,text="
@@ -137,13 +137,36 @@ names(swkey)<-c("site","trt")
 
 pw<-merge(key,dproj)
 sw<-merge(swkey,dprojsw)
-
 sw$chamber<-NA
 
 #pwsave<-pw
 pw<-pw[,match(names(pw),names(sw))]
 
 dproj<-rbind(pw,sw)
+
+fullvar<-c("date","station","pwsw","site","chamber","trt","ALKA","CL","DOC","NH4","NOX","Salinity","SO4","TDN")
+if(length(fullvar[is.na(match(fullvar,names(dproj)))])>0){
+paddt<-data.frame(matrix(99999999,ncol=length(fullvar[is.na(match(fullvar,names(dproj)))]),nrow=nrow(dproj)))
+names(paddt)<-fullvar[is.na(match(fullvar,names(dproj)))]
+dproj<-cbind(dproj,paddt)
+}
+
+#savedproj<-dproj
+#dproj<-savedproj
+dproj<-aggregate(cbind(ALKA,CL,DOC,NH4,NOX,Salinity,SO4,TDN) ~ date + station + pwsw + site + chamber + trt,FUN=mean,data=dproj,na.action=na.pass)
+names(dproj)<-c("date","station","pwsw","site","chamber","trt","ALKA","CL","DOC","NH4","NOX","Salinity","SO4","TDN")
+
+
+dproj[,which(colMeans(dproj[,7:ncol(dproj)])==99999999)+6]<-NA
+
+#fix column names
+namestemp<-c("date","station","pwsw","ALKA","CL","DOC","LCOND","LPH","NH4","NOX","Salinity","SO4","TDN","TN","site","chamber","trt")
+namesmiss<-which(is.na(match(namestemp,names(dproj))))
+paddt<-data.frame(matrix(NA,ncol=length(namestemp[namesmiss]),nrow=nrow(dproj)))
+names(paddt)<-namestemp[namesmiss]
+dproj<-cbind(dproj,paddt)
+dproj<-dproj[,match(namestemp,names(dproj))]
+
 fulldt[[which(j==sumpathlist)]]<-dproj
   }
   }

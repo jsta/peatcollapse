@@ -107,15 +107,11 @@ text(x=c(3,6,8,10,12,14,16,18,21,23,27,29,31,33,35),par("usr")[3]-1.2,labels=lab
 #5. clean mesocosm-lab data
 source("R/cleanlab.R")
 flist<-list.files("inst/extdata/Raw/lab","*.csv",include.dirs=T,full.names=T)
-sumpath<-flist[2]
-clab<-cleanlab(sumpath=sumpath,proj="meso",pwsw="all")
-sumpath<-flist[4]
-clab2<-cleanlab(sumpath=sumpath,proj="meso",pwsw="all")
-if(length(names(clab))>length(names(clab2))){
-  clab2[,names(clab)[which(is.na(match(names(clab),names(clab2))))]]<-NA
-  clab2<-clab2[,match(names(clab),names(clab2))]
-}
-clab<-rbind(clab,clab2)
+sumpathlist<-flist[c(2,4)]
+#sumpathlist<-flist[2]
+#sumpathlist<-flist[4]
+clab<-cleanlab(sumpathlist,proj="meso",pwsw="all")
+#unique(clab$date)
 
 #6. clean mescocosm-onsite data
 source("R/cleanmesoonsite.R")
@@ -123,10 +119,12 @@ flist<-list.files("inst/extdata/Raw/onsite","*.csv",include.dirs=T,full.names=T)
 sumpathlist<-flist[c(5)]
 cfonsite<-cmesoonsite(sumpathlist,pwsw="all")#ignore na warnings
 
-
 #7. merge cleaned mesocosm-lab data and cleaned onsite mesocosm data
 cmesoall<-merge(cfonsite,clab,by=c("site","chamber","date","pwsw"),all.y=FALSE,all.x=TRUE)
 cmesoall<-cmesoall[with(cmesoall,order(site,pwsw,date,chamber)),]
+source("R/misc.R")
+cmesoall<-mesokey(cmesoall)
+cmesoall<-cmesoall[order(cmesoall$pwsw,cmesoall$date,cmesoall$site,cmesoall$trt),]
 #write.csv(cmesoall,"inst/extdata/mesoall.csv")
 
 #8. plot mesocosm-lab/onsite data
