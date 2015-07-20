@@ -119,7 +119,7 @@ tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
   
   library(zoo)
   for(i in parampos){
-    #i<-parampos[14]  
+    #i<-parampos[1]  
     print(names(dt)[i])
     curdt<-dt[,c("date","chamber","trt",names(dt)[i])]
     ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
@@ -142,6 +142,7 @@ tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
       #j<-unique(means[,"trt"])[1]
         cmean<-means[means[,"trt"]==j,]
         csd<-sds[sds[,"trt"]==j,]
+        cmean$date<-as.POSIXct(cmean$date)
         
         #clean up x-axis labels
         czoo<-zoo(cmean[,3],cmean$date)
@@ -230,7 +231,84 @@ hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
     legend("topright",c("treatment","control"),col=c("white","black"),fill=c("white","black"))
   }
 }
+
+#'@name mesotsplot
+#'@title plot mesocosm data
+#'@examples
+#'dt<-dt<-read.csv("inst/extdata/mesoall.csv")
+#'mesotsplot(dt,params=names(dt)[c(6,8,11,12,13,16,19,20,21)],pwsw="pw",tofile=FALSE)
     
+mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE){
+  #dt<-read.csv("inst/extdata/mesoall_soilonly.csv")
+  parampos<-match(params,names(dt))
+  if(class(dt$date)=="factor"){
+    dt$date<-as.POSIXct(dt$date)
+  }
+  
+  if(pwsw=="pw"){
+    dt<-dt[dt$pwsw=="PW",]
+  }
+  if(pwsw=="sw"){
+    dt<-dt[dt$pwsw=="SW",]
+  }
+  
+  allna<-which(sapply(parampos,function(x) !any(!is.na(dt[,x]))))
+  if(length(allna)>0){
+    message(names(dt)[parampos[allna]]," is all na and has been removed")
+    parampos<-parampos[-allna]
+  }
+  
+  library(zoo)
+  for(i in parampos){
+    #i<-parampos[1]  
+    print(names(dt)[i])
+    curdt<-dt[,c("date","chamber","trt",names(dt)[i])]
+    ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
+    ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
+    if(ylim[1]<0){
+      ylim[1]=0
+    }
+    
+    means<-aggregate(curdt[,4],by=list(curdt$date,curdt$trt),function(x) mean(x,na.rm=T))
+    sds<-aggregate(curdt[,4],by=list(curdt$date,curdt$trt),function(x) sd(x,na.rm=T))
+    names(means)<-names(sds)<-c("date","trt","value")
+    
+    #browser()
+    if(tofile==TRUE){
+      outname<-toupper(paste("meso",pwsw,"_",names(dt)[i],sep=""))
+      png(file.path("fig","meso",paste(outname,".png",sep="")),width=489,height=386)
+    }
+    
+    collist<-c("black","red","darkgreen","gray")
+    for(j in unique(means[,"trt"])){
+      #j<-unique(means[,"trt"])[2]
+      cmean<-means[means[,"trt"]==j,]
+      csd<-sds[sds[,"trt"]==j,]
+      
+      #clean up x-axis labels
+      czoo<-zoo(cmean[,3],cmean$date)
+      times<-time(czoo)
+      ticks<-seq(times[1],times[length(times)],by="months")
+      
+      if(j==unique(means[,"trt"])[1]){
+        plot(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",xlab="",main=toupper(paste(pwsw," ",min(cmean$date)," - ",max(cmean$date),sep="")))
+        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3)
+        axis(1,at=ticks,labels=strftime(ticks,"%b-%y"),tcl=-0.3,las=2)
+        legend("topleft",legend=c("ambcont","ambinun","elevcont","elevinun"),col=c("black","red","darkgreen","gray"),pch=19,horiz=TRUE)
+      }else{
+        points(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",col=collist[match(j,unique(means[,"trt"]))])
+        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red")
+      }
+    }
+    if(tofile==TRUE){
+      dev.off()
+    }
+  }
+}
+
+
+
+
 #                 
 #     for(j in unique(curdt[,"trt"])){
 #       ctrt<-curdt[curdt$trt==j,]
