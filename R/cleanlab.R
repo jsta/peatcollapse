@@ -88,33 +88,63 @@ cleanlab<-function(sumpathlist,proj="field",pwsw="all"){
     dproj$chamber<-sapply(dproj$station,function(x) substring(x,4,nchar(x))) #chamber = core number
    
     #load treatment keys
-    key<-read.table(header=FALSE,text="
-                    1 elevcont                    
-                    3 elevcont
-                    10 elevcont
-                    12 elevcont
-                    17 elevcont
-                    19 elevcont
-                    2 elevinun
-                    4 elevinun
-                    9 elevinun
-                    11 elevinun
-                    18 elevinun
-                    20 elevinun
-                    6 ambcont
-                    8 ambcont
-                    14 ambcont
-                    16 ambcont
-                    22 ambcont
-                    24 ambcont
-                    5 ambinun
-                    7 ambinun
-                    13 ambinun
-                    15 ambinun
-                    21 ambinun
-                    23 ambinun
-                    ")
+#     #plants plus soil
+#     key<-read.table(header=FALSE,text="
+#                     1 elevcont                    
+#                     3 elevcont
+#                     10 elevinun
+#                     12 elevinun
+#                     17 elevcont
+#                     19 elevcont
+#                     2 elevinun
+#                     4 elevinun
+#                     9 elevcont
+#                     11 elevcont
+#                     18 elevinun
+#                     20 elevinun
+#                     6 ambcont
+#                     8 ambcont
+#                     14 ambcont
+#                     16 ambcont
+#                     22 ambinun
+#                     24 ambinun
+#                     5 ambinun
+#                     7 ambinun
+#                     13 ambinun
+#                     15 ambinun
+#                     21 ambcont
+#                     23 ambcont
+#                     ")
+    
+        #soil only
+        key<-read.table(header=FALSE,text="
+                        1 elevcont                    
+                        3 elevcont
+                        10 elevinun
+                        12 elevinun
+                        17 elevcont
+                        19 elevcont
+                        2 elevinun
+                        4 elevinun
+                        9 elevcont
+                        11 elevcont
+                        18 elevinun
+                        20 elevinun
+                        6 ambcont
+                        8 ambcont
+                        14 ambcont
+                        16 ambcont
+                        22 ambinun
+                        24 ambinun
+                        5 ambinun
+                        7 ambinun
+                        13 ambinun
+                        15 ambinun
+                        21 ambcont
+                        23 ambcont
+                        ")
 
+#swkey is the same for both meso experiments
 swkey<-read.table(header=FALSE,text="
                   1 elev
                   2 amb

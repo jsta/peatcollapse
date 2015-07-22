@@ -1,51 +1,45 @@
-library(zoo)
+ddir<-"inst/extdata/Raw/aquatroll/"
+deep<-read.csv(paste(ddir,"AquatrollBS_DeepWellCorrected_2015-10-30_2015-04-20.csv",sep=""),skip=72)[,c(1,8)]
+shallow<-read.csv(paste(ddir,"AquatrollBW_ShallowWellCorrected_2015-10-30_2015-04-20.csv",sep=""),skip=72)[,c(1,9)]
 
-#list.files("inst/extdata/Raw/")
+houragg<-function(x){
+  #x<-deep
+  names(x)<-c("datetime","depth")
+  x$datetime<-strptime(x$datetime,format="%m/%d/%y %H:%M")
+  x$datetime<-strftime(x$datetime,format="%Y-%m-%d %H:00:00")
+  #x$datetime<-as.factor(x$datetime)
+  x<-aggregate(. ~ datetime, data=x, mean)
+  x[,1]<-as.POSIXct(x[,1])
+  x
+}
 
-eden<-read.csv("inst/extdata/Raw/eden_1431030671_water_level.csv",header=T,skip=4)[,1:2]
-names(eden)<-c("datetime","depth")
-eden[,"datetime"]<-as.POSIXct(eden[,"datetime"])
-eden<-eden[!duplicated(eden$datetime),]
+deep<-houragg(deep)
+shallow<-houragg(shallow)
 
-aqhi<-read.csv("inst/extdata/Raw/AquatrollBW_ShallowWellCorrected_2015-10-30_2015-04-20.csv",header=F,skip=73)[,c(1,9)]
-aqlow<-read.csv("inst/extdata/Raw/Aquatroll_Deep Well_10302014_04202015.csv",header=F,skip=73)[,c(1,3)]
-names(aqhi)<-names(aqlow)<-c("datetime","depth")
+edent<-read.csv(paste(ddir,"eden_1431030671_water_level.csv",sep=""),header=T,skip=4)[,1:2]
+names(edent)<-c("datetime","depth")
+edent$depth<-edent$depth*30.48#ft to cm
+edent[,"datetime"]<-as.POSIXct(edent[,"datetime"])
+edent<-edent[!duplicated(edent$datetime),]
 
-aqhi$datetime<-as.POSIXct(strptime(aqhi$datetime,format="%m/%d/%y %H:%M"))
-aqlow$datetime<-as.POSIXct(strptime(aqlow$datetime,format="%m/%d/%y %H:%M"))
-aqhi<-aqhi[!duplicated(aqhi$datetime),]
-aqlow<-aqlow[!duplicated(aqlow$datetime),]
+##read in manual onsite measurements (units in ft)####
+# onsite<-read.table(text="
+# 2014-10-15 12:00,0.65
+# 2014-11-19 12:00,0.5
+# 2015-01-13 12:00,0
+# 2014-12-16 12:00,0.16",sep=",")
+#names(onsite)<-c("datetime","depth")
+#onsite$datetime<-as.POSIXct(strptime(onsite$datetime,format="%Y-%m-%d %H:%M"))
+#onsitezoo<-zoo(onsite$depth,onsite$datetime)
 
-aqlow$datetime<-as.POSIXct(strftime(aqlow$datetime,format="%Y-%m-%d %H:00"))
-aqhi$datetime<-as.POSIXct(strftime(aqhi$datetime,format="%Y-%m-%d %H:00"))
+#fit aquatroll to eden####
+shallow<-zoo(shallow$depth,shallow$datetime)
+edent<-zoo(edent$depth,edent$datetime)
+allzoo<-merge(edent,shallow,all=FALSE)
+fit<-lm(allzoo$shallow~allzoo$edent)
 
-aqlow<-aggregate(aqlow,by=list(aqlow$datetime),mean)
-aqhi<-aggregate(aqhi,by=list(aqhi$datetime),mean)
+plot(predict(fit))
+lines(as.numeric(allzoo$shallow),col="red")
 
-#units in ft
-onsite<-read.table(text="
-2014-10-15 12:00,0.65
-2014-11-19 12:00,0.5
-2015-01-13 12:00,0
-2014-12-16 12:00,0.16",sep=",")
-
-names(onsite)<-c("datetime","depth")
-onsite$datetime<-as.POSIXct(strptime(onsite$datetime,format="%Y-%m-%d %H:%M"))
-onsitezoo<-zoo(onsite$depth,onsite$datetime)
-aqhizoo<-zoo(aqhi$depth,aqhi$datetime)
-onsitezoo<-merge(aqhizoo,onsitezoo)
-onsitezoo<-onsitezoo[!is.na(onsitezoo$onsitezoo)]
-fit<-lm(onsitezoo$onsitezoo~onsitezoo$aqhizoo)$coefficients
-
-aqhi$depth<-aqhi$depth*fit[2]+fit[1]
-
-
-edenzoo<-zoo(eden$depth,eden$datetime)
-aqhizoo<-zoo(aqhi$depth,aqhi$datetime)
-#aqlowzoo<-zoo(aqlow$depth,aqlow$datetime)
-
-allzoo<-merge(edenzoo,aqhizoo,all=FALSE)
-fit<-lm(allzoo$aqhizoo~allzoo$edenzoo)$coefficients
-
-edenzoo<-edenzoo*fit[2]+fit[1]-0.32
-
+#forecast aquatroll depth based on more recent eden####
+#aqhi$depth<-aqhi$depth*fit[2]+fit[1]

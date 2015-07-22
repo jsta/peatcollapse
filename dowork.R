@@ -78,7 +78,7 @@ if(any(cfieldall$site=="BW")){
 source("R/pcplot.R")
 scplot(cfieldall,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="FW and BW",pwsw="sw")#scatterplots
 bxplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20,22:25)],bwfw="bw",pwsw="pw",notch=T)#boxplots
-tsplot(cfieldall,params=names(cfieldall)[c(7)],bwfw="fw",pwsw="pw",tofile=FALSE)#timeseries
+tsplot(cfieldall,params=names(cfieldall)[c(11,18)],bwfw="bw",pwsw="pw",tofile=FALSE)#timeseries
 hstplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20)],bwfw="bw",pwsw="pw")#overlapping histograms
 
 #4a. statistical tests for treatment effect (in development)####
@@ -116,7 +116,8 @@ clab<-cleanlab(sumpathlist,proj="meso",pwsw="all")
 #6. clean mescocosm-onsite data
 source("R/cleanmesoonsite.R")
 flist<-list.files("inst/extdata/Raw/onsite","*.csv",include.dirs=T,full.names=T)
-sumpathlist<-flist[c(5)]
+sumpathlist<-flist[c(6)]#plant plus soil
+#sumpathlist<-flist[c(3)]#soil only
 cfonsite<-cmesoonsite(sumpathlist,pwsw="all")#ignore na warnings
 
 #7. merge cleaned mesocosm-lab data and cleaned onsite mesocosm data
@@ -125,6 +126,11 @@ cmesoall<-cmesoall[with(cmesoall,order(site,pwsw,date,chamber)),]
 source("R/misc.R")
 cmesoall<-mesokey(cmesoall)
 cmesoall<-cmesoall[order(cmesoall$pwsw,cmesoall$date,cmesoall$site,cmesoall$trt),]
-#write.csv(cmesoall,"inst/extdata/mesoall.csv")
+#write.csv(cmesoall,"inst/extdata/mesoall_soilonly.csv")
 
 #8. plot mesocosm-lab/onsite data
+dt<-read.csv("inst/extdata/mesoall_soilonly.csv")
+aggregate(ALKA ~ date,data=dt,FUN=mean)
+mesotsplot(dt,params=names(dt)[c(12,19)],pwsw="pw")
+
+

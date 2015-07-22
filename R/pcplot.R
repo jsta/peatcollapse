@@ -238,7 +238,7 @@ hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
 #'dt<-dt<-read.csv("inst/extdata/mesoall.csv")
 #'mesotsplot(dt,params=names(dt)[c(6,8,11,12,13,16,19,20,21)],pwsw="pw",tofile=FALSE)
     
-mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE){
+mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend=TRUE){
   #dt<-read.csv("inst/extdata/mesoall_soilonly.csv")
   parampos<-match(params,names(dt))
   if(class(dt$date)=="factor"){
@@ -294,7 +294,9 @@ mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE){
         plot(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",xlab="",main=toupper(paste(pwsw," ",min(cmean$date)," - ",max(cmean$date),sep="")))
         arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3)
         axis(1,at=ticks,labels=strftime(ticks,"%b-%y"),tcl=-0.3,las=2)
+        if(addlegend==TRUE){
         legend("topleft",legend=c("ambcont","ambinun","elevcont","elevinun"),col=c("black","red","darkgreen","gray"),pch=19,horiz=TRUE)
+        }
       }else{
         points(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",col=collist[match(j,unique(means[,"trt"]))])
         arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red")
