@@ -1,6 +1,7 @@
 ddir<-"inst/extdata/Raw/aquatroll/"
 deep<-read.csv(paste(ddir,"AquatrollBS_DeepWellCorrected_2015-10-30_2015-04-20.csv",sep=""),skip=72)[,c(1,8)]
-shallow<-read.csv(paste(ddir,"AquatrollBW_ShallowWellCorrected_2015-10-30_2015-04-20.csv",sep=""),skip=72)[,c(1,9)]
+
+shallow<-read.csv(paste(ddir,"AquatrollBW_ShallowWellCorrected_2014-10-30_2015-04-20.csv",sep=""),skip=72)[,c(1,9)]
 
 houragg<-function(x){
   #x<-deep

@@ -2,7 +2,7 @@
 #'@title Clean onsite data files
 #'@param sumpathlist list of file paths
 #'@param pwsw return only pw, sw, or all?
-#'@description Removes entries tagged in the "timing.of.sample.with.dosing" field of anything other than "1 day post"
+#'@description Removes entries tagged in the "timing.of.sample.with.dosing" field of anything other than a blank ("") or "1 day post"
 
 cfieldonsite<-function(sumpathlist,pwsw="all"){
   library(jsta)
@@ -14,7 +14,7 @@ cfieldonsite<-function(sumpathlist,pwsw="all"){
     names(dt)<-tolower(names(dt))
     
     if(any(names(dt)=="timing.of.sample.with.dosing")){
-      dt<-dt[dt$timing.of.sample.with.dosing=="1 day post",]
+      dt<-dt[dt$timing.of.sample.with.dosing=="1 day post"|dt$timing.of.sample.with.dosing=="",]
       dt<-dt[,-which(names(dt)=="timing.of.sample.with.dosing")]
     }
     
@@ -34,12 +34,20 @@ cfieldonsite<-function(sumpathlist,pwsw="all"){
     }
     suppressWarnings(dt[,11:14]<-apply(dt[,11:14],2,function(x) as.numeric(x)))
     suppressWarnings(dt[,"chamber"]<-sapply(dt[,"chamber"],function(x) as.numeric(x)))
-  
-    dtagg<-aggregate(dt[,11:14],by=list(dt$date,dt$chamber,dt$pwsw),function(x) mean(x,na.rm=T))
+    
+    #dt<-dt[!is.na(dt$chamber),]
+    dt$inout<-NA
+    dt[dt$sipper<3,"inout"]<-"out"
+    dt[dt$sipper>=3,"inout"]<-"in"
+    
+    dtagg<-aggregate(dt[,11:14],by=list(dt$date,dt$chamber,dt$pwsw,dt$inout),function(x) mean(x,na.rm=T))
     #dtagg<-aggregate(dt,list(dt$date,dt$chamber,dt$pwsw),function(x) mean(x,na.rm=T))
-    names(dtagg)[1:3]<-c("date","chamber","pwsw")
+    names(dtagg)[1:4]<-c("date","chamber","pwsw","inout")
     names(dtagg)<-tolower(names(dtagg))
-    dtagg<-dtagg[order(dtagg$date),]
+    
+    #dtagg[is.na(dtagg$inout),]
+    
+    dtagg<-dtagg[order(dtagg$inout,dtagg$date),]
     dtagg$site<-paste(substring(sumpathlist[i],49,49),"W",sep="")
     full[[i]]<-dtagg    
   }

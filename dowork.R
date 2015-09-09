@@ -20,7 +20,7 @@ flist<-list.files("inst/extdata/Raw/lab","*.csv",include.dirs=T,full.names=T)
 #sumpathlist<-flist[1]
 #names(cleanlab(flist[1],proj="field",pwsw="all"))
 #names(cleanlab(flist[2],proj="field",pwsw="all"))
-sumpathlist<-flist[1:2]
+sumpathlist<-flist[-1*unlist(sapply(c("LabP","Mesocosm"),function(x) grep(x,flist)))]
 clab<-cleanlab(sumpathlist,proj="field",pwsw="all")
 
 #sumpath<-flist[1]
@@ -42,7 +42,7 @@ clab<-cleanlab(sumpathlist,proj="field",pwsw="all")
 
 #merge P data
 source("R/cleanlab.R")
-sumpath<-flist[3]
+sumpath<-flist[grep("LabP",flist)]
 cp<-cleanp(sumpath)
 claball<-merge(clab,cp,by=c("site","chamber","date","pwsw"),all.x=TRUE)
 
@@ -51,7 +51,8 @@ claball<-merge(clab,cp,by=c("site","chamber","date","pwsw"),all.x=TRUE)
 source("R/cleanfieldonsite.R")
 flist<-list.files("inst/extdata/Raw/onsite","*.csv",include.dirs=T,full.names=T)
 #basename(flist)[6:7]
-sumpathlist<-flist[c(6:7)]
+sumpathlist<-flist[-1*grep("Meso",flist)]
+sumpathlist<-sumpathlist[which(substring(basename(sumpathlist),1,6)==max(substring(basename(sumpathlist),1,6)))]
 cfonsite<-cfieldonsite(sumpathlist,pwsw="all")#ignore na warnings
 
 #test#
@@ -60,7 +61,16 @@ if(length(test[duplicated(test)])>0){message("Duplicated rows. Ensure that only 
 
 #3. merge cleaned field-lab/onsite data####
 cfieldall<-merge(cfonsite,claball,by=c("site","chamber","date","pwsw"),all.y=TRUE,all.x=TRUE)
-cfieldall<-cfieldall[with(cfieldall,order(site,pwsw,date,chamber)),]
+
+cfieldall<-cfieldall[cfieldall$date!=unique(cfieldall$date)[
+  which(is.na(match(unique(cfieldall$date),unique(cfonsite$date))))],]
+
+onsitecol<-c(1:10,which(names(cfieldall)=="trt"))
+labcol<-(which(names(cfieldall)=="station")+1):(ncol(cfieldall))
+labcol<-labcol[labcol!=which(names(cfieldall)=="trt")]
+cfieldall[cfieldall$inout=="out" & !is.na(cfieldall$inout),labcol]<-NA
+
+cfieldall<-cfieldall[with(cfieldall,order(site,inout,pwsw,date,chamber)),]
 if(any(cfieldall$site=="BW")){
   cfieldall[cfieldall$chamber>9&cfieldall$site=="BW","trt"]<-"treatment"
   cfieldall[is.na(cfieldall$trt),"trt"]<-"control"  
@@ -70,15 +80,17 @@ if(any(cfieldall$site=="BW")){
   cfieldall[is.na(cfieldall$trt),"trt"]<-"control"  
 }
 
-#write.csv(cfieldall,"inst/extdata/fieldallv4.csv")
+
+
+#write.csv(cfieldall,"inst/extdata/fieldallv6.csv",row.names=FALSE)
 
 #4. plot field-lab/onsite data####
-#cfieldall<-read.csv("inst/extdata/fieldallv4.csv")[,-1]
+#cfieldall<-read.csv("inst/extdata/fieldallv6.csv")
 #cfieldall$date<-as.POSIXct(cfieldall$date)
 source("R/pcplot.R")
 scplot(cfieldall,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="FW and BW",pwsw="sw")#scatterplots
 bxplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20,22:25)],bwfw="bw",pwsw="pw",notch=T)#boxplots
-tsplot(cfieldall,params=names(cfieldall)[c(11,18)],bwfw="bw",pwsw="pw",tofile=FALSE)#timeseries
+tsplot(cfieldall,params=names(cfieldall)[c(8)],bwfw="bw",pwsw="pw",tofile=FALSE,inout = "in")#timeseries
 hstplot(cfieldall,params=names(cfieldall)[c(5:8,11:13,15:17,19:20)],bwfw="bw",pwsw="pw")#overlapping histograms
 
 #4a. statistical tests for treatment effect (in development)####

@@ -85,23 +85,23 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
   }
 }
 
-tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="pw",tofile=FALSE){
+tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="pw",inout="all",inclegend=TRUE,tofile=FALSE){
   #dt<-cfieldall
   parampos<-match(params,names(dt))
   dt$chamber<-as.numeric(as.character(dt$chamber))
     
   if(bwfw=="bw"){
     dt<-dt[dt$site=="BW",]
-    dt$trt<-NA
-    dt[dt$chamber>9,"trt"]<-"treatment"
-    dt[is.na(dt$trt),"trt"]<-"control"
+    #dt$trt<-NA
+    #dt[dt$chamber>9,"trt"]<-"treatment"
+    #dt[is.na(dt$trt),"trt"]<-"control"
     
   }
   if(bwfw=="fw"){
     dt<-dt[dt$site=="FW",]
-    dt$trt<-NA
-    dt[dt$chamber>9,"trt"]<-"treatment"
-    dt[is.na(dt$trt),"trt"]<-"control"
+    #dt$trt<-NA
+    #dt[dt$chamber>9,"trt"]<-"treatment"
+    #dt[is.na(dt$trt),"trt"]<-"control"
   }
   
   if(pwsw=="pw"){
@@ -111,16 +111,24 @@ tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
     dt<-dt[dt$pwsw=="SW",]
   }
   
+  if(inout=="in"){
+    dt<-dt[dt$inout=="in",]
+  }
+  
+  if(inout=="out"){
+    dt<-dt[dt$inout=="out",]
+  }
+  
   allna<-which(sapply(parampos,function(x) !any(!is.na(dt[,x]))))
   if(length(allna)>0){
     message(names(dt)[parampos[allna]]," is all na and has been removed")
     parampos<-parampos[-allna]
   }
   
-  library(zoo)
+  library(zoo,quietly = TRUE,verbose = FALSE)
   for(i in parampos){
     #i<-parampos[1]  
-    print(names(dt)[i])
+    #print(names(dt)[i])
     curdt<-dt[,c("date","chamber","trt",names(dt)[i])]
     ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
     ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
@@ -151,12 +159,14 @@ tsplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
                 
       if(j==unique(means[,"trt"])[1]){
         plot(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",xlab="",main=toupper(paste(bwfw,pwsw," ",min(cmean$date)," - ",max(cmean$date),sep="")))
-        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3)
+        suppressWarnings(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3))
         axis(1,at=ticks,labels=strftime(ticks,"%b-%y"),tcl=-0.3,las=2)
+        if(inclegend==TRUE){
         legend("topleft",c("control","treatment"),col=c("black","red"),pch=19)
+        }
       }else{
         points(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",col="red")
-        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red")
+        suppressWarnings(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red"))
       }
     }
     if(tofile==TRUE){
@@ -258,10 +268,10 @@ mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend
     parampos<-parampos[-allna]
   }
   
-  library(zoo)
+  library(zoo,quietly = TRUE)
   for(i in parampos){
     #i<-parampos[1]  
-    print(names(dt)[i])
+    #print(names(dt)[i])
     curdt<-dt[,c("date","chamber","trt",names(dt)[i])]
     ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
     ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
@@ -292,14 +302,14 @@ mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend
       
       if(j==unique(means[,"trt"])[1]){
         plot(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",xlab="",main=toupper(paste(pwsw," ",min(cmean$date)," - ",max(cmean$date),sep="")))
-        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3)
+        suppressMessages(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3))
         axis(1,at=ticks,labels=strftime(ticks,"%b-%y"),tcl=-0.3,las=2)
         if(addlegend==TRUE){
         legend("topleft",legend=c("ambcont","ambinun","elevcont","elevinun"),col=c("black","red","darkgreen","gray"),pch=19,horiz=TRUE)
         }
       }else{
         points(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=ylab,xaxt="n",col=collist[match(j,unique(means[,"trt"]))])
-        arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red")
+        suppressMessages(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red"))
       }
     }
     if(tofile==TRUE){
