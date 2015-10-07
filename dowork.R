@@ -116,14 +116,22 @@ lablist.x<-paste(unique(cfieldall$chamber),unique(cfieldall$trt),sep=".")
 axis(1,at=c(3,6,8,10,12,14,16,18,21,23,27,29,31,33,35),labels=F)
 text(x=c(3,6,8,10,12,14,16,18,21,23,27,29,31,33,35),par("usr")[3]-1.2,labels=lablist.x,srt=90,pos=1,xpd=T)
 
-#5. clean mesocosm-lab data
-source("R/cleanlab.R")
-flist<-list.files("inst/extdata/Raw/lab","*.csv",include.dirs=T,full.names=T)
-sumpathlist<-flist[c(2,4)]
-#sumpathlist<-flist[2]
-#sumpathlist<-flist[4]
-clab<-cleanlab(sumpathlist,proj="meso",pwsw="all")
-#unique(clab$date)
+
+#Use SQLite database to pull lab data=================================#
+
+#==================================================================#
+
+
+
+
+
+# source("R/cleanlab.R")
+# flist<-list.files("inst/extdata/Raw/lab","*.csv",include.dirs=T,full.names=T)
+# sumpathlist<-flist[c(2,4)]
+# #sumpathlist<-flist[2]
+# #sumpathlist<-flist[4]
+# clab<-cleanlab(sumpathlist,proj="meso",pwsw="all")
+# #unique(clab$date)
 
 #6. clean mescocosm-onsite data
 source("R/cleanmesoonsite.R")
