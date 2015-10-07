@@ -1,0 +1,14 @@
+Package: peatcollapse
+Title: Cleaning, Plotting, and Analysis of Peat Collapse Data
+Description: Functions are provided clean the Peat Collapse data and produce plots.
+Version: 0.1-1
+Date: 2015-10-6
+Author: Joseph Stachelek <jstachel@sfwmd.gov>
+Maintainer: Joseph Stachelek <jstachel@sfwmd.gov>
+Depends: R (>= 3.0.2)
+License: GPL (>= 2)
+LazyData: true
+NeedsCompilation: no
+Suggests: knitr
+VignetteBuilder: knitr
+Imports: RSQLite,gdata,reshape2,jsta,DBI
