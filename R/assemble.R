@@ -14,11 +14,21 @@ assemble_meso <- function(project = "soilplant", tofile = FALSE){
   mesoonsite <- get_mesoonsite(experiment = project)
   
   align_dates <- function(x, dates = mesoonsite$date){
-    dates[which.min(abs(difftime(x, dates)))]
+    #x <- mesolab$date[1]
+    if(any(abs(difftime(x, dates)) < 4)){
+      dates[which.min(abs(difftime(x, dates)))]
+    }else{
+      daycandidate <- unique(dates[strftime(x, format = "%Y-%m") == strftime(dates, format = "%Y-%m")])
+      daycandidate <- daycandidate[(as.numeric(strftime(x, format = "%d")) %% as.numeric(strftime(daycandidate, format = "%d"))) == 0]
+      if(length(daycandidate) > 0){
+        daycandidate
+      }else{
+        x
+      }
+    }
   }
-  
-  mesolab$date <- do.call(c,mapply(align_dates, mesolab$date, SIMPLIFY = FALSE))
-  
+                                                                          mesolab$date <- do.call(c,mapply(align_dates, mesolab$date, SIMPLIFY = FALSE))
+ 
   cmesoall <- merge(mesoonsite, mesolab, by=c("crypt", "core", "date", "pwsw"), all.y = TRUE, all.x = TRUE)
   
   #fill-in missing station entries
@@ -31,6 +41,20 @@ assemble_meso <- function(project = "soilplant", tofile = FALSE){
   source("R/misc.R")
   cmesoall <- mesokey(cmesoall)
   cmesoall <- cmesoall[order(cmesoall$pwsw, cmesoall$date, cmesoall$core, cmesoall$station, cmesoall$trt),]
+  
+  #add unit labels to column names=====================================#
+  unitkey <- read.table(header = FALSE, text = "
+temp-temp.degC 
+cond-cond.mscm 
+ALKA-ALKA.mgL 
+CL-CL.mglCaCO3
+DOC-DOC.mgL
+NH4-NH4.mgL
+SO4-SO4.mgl
+TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
+  
+  names(cmesoall)[!is.na(match(names(cmesoall), unitkey[,1]))]
+  names(cmesoall)[names(cmesoall) %in% unitkey[,1]] <- unitkey[na.omit(match(names(cmesoall), unitkey[,1])), 2]
   
   if(tofile == TRUE){
     write.csv(cmesoall,file.path("inst", "extdata", paste0("mesoall_", project, ".csv")), row.names = FALSE)

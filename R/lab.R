@@ -212,12 +212,18 @@ get_mesolab <- function(project = "soilplant"){
   if(project == "soilplant"){
     dt <- dt[dt$date >= plantinterval[1] & dt$date <= plantinterval[2],]
   }
-  
+
+  #browser()  
   #merge sulfide by approximating to the nearest wq date===============#
-  sulfide <- clean_sulfide()$mesodt[,c("date","core","crypt","sulfide.mm")]
+  sulfide <- clean_sulfide()$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
+
   
   align_sulfide_dates <- function(x, dates = dt$date){
-    dates[which.min(abs(difftime(x, dates)))]
+    if(any(abs(difftime(x, dates)) < 12)){
+      dates[which.min(abs(difftime(x, dates)))]
+    }else{
+      x
+    }
   }
   
   sulfide$date <- do.call(c,mapply(align_sulfide_dates, sulfide$date, SIMPLIFY = FALSE))
@@ -402,11 +408,12 @@ clean_sulfide <- function(sulfpath = NA, sheet_nums = NA){
   }
   
   mesodt <- clean_sulfdt(mesodt)
+  mesodt$datesulfide <- mesodt$date
+  
+  #browser()
   
   #==================================================================#
   fielddt <- clean_sulfdt(fielddt)
-  
-  
   fielddt$sipper <- substring(fielddt$sipper, 1, 1)
   
   fielddt <- aggregate(fielddt[, "sulfide.mm"], by = list(fielddt$date, fielddt$site, fielddt$chamber, fielddt$sipper), function(x) round(mean(x,na.rm=T), 4))
