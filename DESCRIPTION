@@ -9,6 +9,7 @@ Depends: R (>= 3.0.2)
 License: GPL (>= 2)
 LazyData: true
 NeedsCompilation: no
-Suggests: knitr
+Suggests: knitr,
+    rmarkdown
 VignetteBuilder: knitr
 Imports: RSQLite,gdata,reshape2,jsta,DBI

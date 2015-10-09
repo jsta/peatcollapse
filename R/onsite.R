@@ -1,14 +1,16 @@
 #'@name get_mesoonsite
 #'@title Get mesocosm onsite data
 #'@param experiment character choice of "soilplant" or "soil"
-#'@param dtpath character file.path to mesocosm onsite raw data
-get_mesoonsite <- function(experiment = "SoilPlant", dtpath = NA){
+#'@param folderpath character file.path to onsite raw data
+#'@export
+get_mesoonsite <- function(folderpath = file.path("Raw", "onsite"), experiment = "SoilPlant"){
   
   if(is.na(dtpath)){
-    flist <- list.files(file.path("inst", "extdata", "Raw", "onsite"), full.names = TRUE, include.dirs = TRUE)
+    flist <- list.files(folderpath, full.names = TRUE, include.dirs = TRUE)
     flist <- flist[grep(tolower(experiment), tolower(flist))]
     
-    dtpath <- flist[which.max(as.numeric(substring(unlist(lapply(strsplit(flist,"/"), function(x) unlist(x[5]))), 1, 8)))]
+    dtpath <- flist[which.max(as.numeric(substring(unlist(lapply(strsplit(flist,"/"), function(x) unlist(x[3]))), 1, 8)))]
+    
   }
   
   #'@name cmesoonsite
@@ -77,12 +79,13 @@ SW,2",sep=",", stringsAsFactors = FALSE)
 #'@name get_fieldonsite
 #'@import jsta
 #'@title Get field onsite data
+#'@export
 #'@examples \dontrun{
 #'dt <- get_fieldonsite()
 #'}
-get_fieldonsite <- function(){
+get_fieldonsite <- function(folderpath = file.path("Raw", "onsite")){
   
-  flist <- list.files(file.path("inst", "extdata", "Raw", "onsite"), full.names = TRUE, include.dirs = TRUE)
+  flist <- list.files(folderpath, full.names = TRUE, include.dirs = TRUE)
   fwpath <- flist[grep(tolower("FreshWFieldData"), tolower(flist))]
   fwpath <- fwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(fwpath,"/"), function(x) unlist(x[5]))), 1, 8)))]
     

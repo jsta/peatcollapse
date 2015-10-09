@@ -8,10 +8,10 @@
 #'@examples \dontrun{
 #'create_labdb()
 #'}
-create_labdb <- function(eddpath = "inst/extdata/Raw/lab/EDD", dbname  = "eddlab"){
+create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc_eddlab.db", tablename = "eddlab"){
   
   clean_csv <- function(eddpath){
-    flist<-list.files(eddpath, full.names = TRUE, include.dirs = TRUE, pattern = "csv")
+    flist <- list.files(eddpath, full.names = TRUE, include.dirs = TRUE, pattern = "csv")
     
     dt <- read.csv(flist[1], stringsAsFactors = FALSE)
     
@@ -45,10 +45,8 @@ create_labdb <- function(eddpath = "inst/extdata/Raw/lab/EDD", dbname  = "eddlab
   fullcentury <- sapply(fullcentury, function(x) gsub("20", "", x))
   edd$collect_date <- jsta::date456posix(fullcentury, century = 20)
   
-  dt <- edd
-  
-  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), "pc_eddlab.db")
-  invisible(RSQLite::dbWriteTable(conn = eddlab, name = dbname, value = dt, overwrite = TRUE))
+  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
+  invisible(RSQLite::dbWriteTable(conn = eddlab, name = tablename, value = edd, overwrite = TRUE))
   invisible(RSQLite::dbDisconnect(eddlab))
 }
 
@@ -62,25 +60,17 @@ create_labdb <- function(eddpath = "inst/extdata/Raw/lab/EDD", dbname  = "eddlab
 #'@examples \dontrun{
 #'clean_lab()
 #'}
-clean_lab <- function(begindate = "2014-09-07"){
-  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), "pc_eddlab.db")
+clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate = "2014-09-07"){
+  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   
-  q <- "SELECT matrix, location, sample_type, collect_date, acode, result, result_units_desc, mdl_final, cust_sample_id 
-  FROM eddlab
-  WHERE sample_type LIKE 'SAMP' OR sample_type LIKE 'FD'"
+  q <- paste("SELECT matrix, location, sample_type, collect_date, acode, result, result_units_desc, mdl_final, cust_sample_id FROM", tablename, "WHERE sample_type LIKE 'SAMP' OR sample_type LIKE 'FD'")
   dt <- RSQLite::dbGetQuery(eddlab, q)
   
   #remove mdl flags from result field=================================#
   dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))] <- sapply(dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))], function(x) substring(x, 1, nchar(x)-1))
   dt$result <- as.numeric(dt$result)
   
-  #format dates as POSIX==============================================#
-#   date_split <- matrix(unlist(strsplit(dt$collect_date, "/", fixed = T)), ncol = 3, byrow = 3)
-#   date_split[,1] <- formatC(as.numeric(date_split[,1]), width = 2, format = "d", flag = "0")
-#   date_split[,2] <- formatC(as.numeric(date_split[,2]), width = 2, format = "d", flag = "0")
-#   
-#   dt$collect_date <- as.POSIXct(strptime(paste0(date_split[,1], date_split[,2], date_split[,3]), format = "%m%d%Y"))
-   dt <- dt[dt$collect_date > as.POSIXct(begindate),]
+  dt <- dt[dt$collect_date > as.POSIXct(begindate),]
   
   #split meso and field into sql tables===============================#
   mesolocations <- c(unique(dt$location[grep("C", dt$location)]), unique(dt$location[grep("H", dt$location)]), unique(dt$location[grep("M", dt$location)]))
@@ -104,13 +94,13 @@ clean_lab <- function(begindate = "2014-09-07"){
 #'@examples \dontrun{
 #'clab <- get_mesolab(project = "soilplant")
 #'}
-get_mesolab <- function(project = "soilplant"){
+get_mesolab <- function(project = "soilplant", dbname = "pc_eddlab.db"){
   
   #update database and format data====================================#
   create_labdb()
   clean_lab()
   
-  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), "pc_eddlab.db")
+  eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   q <- "SELECT * FROM meso"
   dt <- RSQLite::dbGetQuery(eddlab, q)
   dt$collect_date <- as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "EST")
@@ -240,6 +230,7 @@ get_mesolab <- function(project = "soilplant"){
 #'@param addlims logical integrate lims data with edd data?
 #'@param limspath character folder.path to folder containing lims data
 #'@param fieldonsite data.frame output of get_fieldonsite
+#'@export
 #'@examples
 #'\dontrun{
 #'dt <- get_fieldlab(fieldonsite = fieldonsite)
