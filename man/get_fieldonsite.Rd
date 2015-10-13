@@ -4,7 +4,7 @@
 \alias{get_fieldonsite}
 \title{Get field onsite data}
 \usage{
-get_fieldonsite()
+get_fieldonsite(folderpath = file.path("Raw", "onsite"))
 }
 \description{
 Get field onsite data

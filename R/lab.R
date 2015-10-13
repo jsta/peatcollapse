@@ -4,6 +4,7 @@
 #'@import RSQLite
 #'@param eddpath character file.path to edd data folder
 #'@param dbname character file name of output SQLite database
+#'@param tablename character name of internal database table
 #'@export
 #'@examples \dontrun{
 #'create_labdb()
@@ -54,6 +55,8 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
 #'@title Clean lab data
 #'@import RSQLite
 #'@param begindate character date in YYYY-MM-DD format specifying a lower limit on the date of measurements to return
+#'@param dbname character file.path of edd database
+#'@param tablename character name of internal database table
 #'@export
 #'@details mdl flags are removed from result field
 #'@return An updated SQLite database with seperate tables for "meso" and "field" studies. Data remains in long rather than wide format?
@@ -90,6 +93,7 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 #'@import reshape2
 #'@import DBI
 #'@param project character choice of "soil" or "soilplant"
+#'@param dbname character file.path of edd database
 #'@export
 #'@examples \dontrun{
 #'clab <- get_mesolab(project = "soilplant")

@@ -79,6 +79,7 @@ SW,2",sep=",", stringsAsFactors = FALSE)
 #'@name get_fieldonsite
 #'@import jsta
 #'@title Get field onsite data
+#'@param folderpath character file.path to folder containing raw onsite data files
 #'@export
 #'@examples \dontrun{
 #'dt <- get_fieldonsite()

@@ -4,7 +4,8 @@
 \alias{create_labdb}
 \title{Create sqlite database of peatcollapse lab data}
 \usage{
-create_labdb(eddpath = "inst/extdata/Raw/lab/EDD", dbname = "eddlab")
+create_labdb(eddpath = file.path("Raw", "lab", "EDD"),
+  dbname = "pc_eddlab.db", tablename = "eddlab")
 }
 \arguments{
 \item{eddpath}{character file.path to edd data folder}

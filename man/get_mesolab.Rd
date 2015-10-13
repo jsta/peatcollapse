@@ -4,7 +4,7 @@
 \alias{get_mesolab}
 \title{Get mesocosm lab data}
 \usage{
-get_mesolab(project = "soilplant")
+get_mesolab(project = "soilplant", dbname = "pc_eddlab.db")
 }
 \arguments{
 \item{project}{character choice of "soil" or "soilplant"}

@@ -4,7 +4,8 @@
 \alias{clean_lab}
 \title{Clean lab data}
 \usage{
-clean_lab(begindate = "2014-09-07")
+clean_lab(dbname = "pc_eddlab.db", tablename = "eddlab",
+  begindate = "2014-09-07")
 }
 \arguments{
 \item{begindate}{character date in YYYY-MM-DD format specifying a lower limit on the date of measurements to return}
