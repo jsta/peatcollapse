@@ -1,5 +1,5 @@
 ---
-title: "Dealing with Peat Collapse Data"
+title: "Constructing Peat Collapse Summary Files"
 author: "Joseph Stachelek"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -9,63 +9,175 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-The `peatcollapse` package contains functions to clean and assemble the various water quality datasets associated with the SFWMD/FIU/EvergladesFoundation Peat Collapse project into consistent summary files.
+#Introduction
 
-#Raw Data Directory Structure
+The `peatcollapse` package contains functions to clean and assemble the various Peat Collapse project datasets into consistent summary files. These datasets include:
+
+1. Conductivity, salinity, and temperature data collected `onsite` via YSI sonde 
+
+2. Soil redox-potential readings collected `onsite`
+
+3. Water quality chemistry samples processed in the SFWMD `lab`
+
+4. Phosphorus samples processed in the SFWMD Everglades `lab`
+
+5. Sulfide samples processed at the FBSIC `lab`
+
+The ultimate goal is to create seperate "database" summary files for the Field Study and Key Largo Mesocosm Experiments. These summary files should be stand-alone and saved in an open non-proprietary file format such as csv. 
+
+
+#Installing the `peatcollapse` package
+
+The `peatcollapse` `R` package is distributed via a .tar.gz (analagous to .zip) package archive file. This package contains the source code for package functions. In RStudio, it can be installed by navigating to Tools -> Install Packages... -> Install from: -> Package Archive File. Computers running the Windows operating system can only install binary .zip package archive files unless they have additional compiler software installed. The `peatcollapse` binary package can be installed by running the following commands from the R console:
+
+```{r eval=FALSE}
+install.packages(c("RSQLite", "gdata", "reshape2", "DBI"))
+install.packages("peatcollapse_0.1-1.zip", type = "win.binary", repos = NULL)
+```
+
+##Raw Data
+
+The first step in assembling the peat collapse database is to verify that the raw data files are organized in a standardized folder structure.
+
+In the following example, the current versions of the compiled database files are located at the top level of the `PeatCollapseData` directory. Old versions of these compiled files are located in the `Archive` folder. The contents of the `Raw` folder are organized into the `lab` and `onsite` data folders. 
+
+The top level of the `lab` folder contains prelimary "LIMS" data from the SFWMD lab as well as sulfide data from the FBISC lab. The files in the `EDD` subfolder represent the same data as the "LIMS" files except that they have been quality checked by the SFWMD Data Validation Unit. The `onsite` folder contains the "raw" onsite csv files as well as redox data files.
+
+```
+PeatCollapseData
+|    fieldallvX.csv
+|    mesoall_soilonly.csv
+|    mesoall_soilplantvX.csv
+|    pc_eddlab.db
+|
+|____Archive
+|
+|____Raw
+    |____aquatroll
+    |    |   ...
+    |
+    |____lab
+    |    |    201504_Lab_Data_Mar_Apr_2015.csv
+    |    |    201506_Lab_Data_Apr_June_2015.csv
+    |    |    ...
+    |    |    20150923_Sulfide_Raw_ and_CalcsCurves_092315.xlsx
+    |    |    20151001_Sulfide_Raw and CalcsCurves_100115.xlsx
+    |    |    ...
+    |    |
+    |    |____EDD
+    |    |    |   ...
+    |    |    
+    |    |____phosphorus
+    |    |    |   ...
+    |    |
+    |    |____mesocosm
+    |    |    |   ...
+    |    |
+    |____onsite
+    |    |    20150922_SGPeatCollapse_FreshWFieldData.csv
+    |    |    20150922_SGPeatCollapse_BrackishWFieldData.csv
+    |    |    20150701_SGPeatCollapse_KLMesosSoilPlant.csv
+    |    |    20150312_SGPeat Collapse_KLMesosSoilOnly.csv
+    |    |    ...
 
 ```
 
+#Data Processing
 
+We begin by setting the R working directory to the location of the top level peat collapse data folder. The following code chunk sets the `R` "working directory":
+
+```{r eval=FALSE}
+setwd(file.path("/home", "jose","Documents", "Science", "Data", "peatcollapse"))
 ```
 
+The remainder of the code examples in this document specify particular file/folder paths. All of these paths represent the default setting. <span style="color:red;">Any path can be altered to reflect a different local file/folder structure.</span> All additional parameter specifications respresent the default setting. Consult the package documentation to learn about alternatives. Documentation can be accessed by typing `??` followed by the command of interest. For example, to open the documentation for the `setwd` function enter the following command in the `R` console:
 
-#Assembly
-
-##Cleaning
-
-##Mesocosm
-
-##Field
-
-
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r eval=FALSE}
+??setwd
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+##Field Study
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+###Onsite Data
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+The `get_fieldonsite` function can be used to obtain cleaned onsite data from the ENP field manipulations. First, this function searches the folder specified by the `onsitepath` parameter for the latest onsite files from the brackish and freshwater sites. It assumes that file names have been preappended with a date in YYYYMMDD format. Second, records which were not collected "1 day post" dose are removed. Third, the "inout" field is created based on the "sipper" data field in order to designate whether measurements were collected inside or outside the field chambers. Fourth, the date column is formatted to a machine-readable format (YYYY-MM-DD). Finally, within-chamber replicates are averaged in preparation for joining to the lab data. The `get_fieldonsite` function can be tested by running the following command:
 
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{r eval=FALSE}
+fieldonsite <- get_fieldonsite(onsitepath = file.path("Raw", "onsite"))
 ```
 
-Also a quote using `>`:
+###Lab Data
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+The `get_fieldlab` function is used to obtain cleaned lab data for the ENP field manipulations. First, this function gathers all the files from the folder specified by the `eddpath` parameter and creates an `SQLite` database. Second, the dates associated with the lab samples are adjusted to match the nearest field data collections in the results from `get_fieldonsite`. Third, field duplicates are averaged together with the standard samples. Fourth, treatment labels are calculated based on site and chamber number. Fifth, any missing EDD data is obtained from the preliminary LIMS data files. 
+
+Interally, the `get_fieldlab` function calls the `clean_p` function to obtain data from the folder specified by the `ppath` parameter and to merge it with the SFWMD lab data. The `clean_p` function can be tested with the following command:
+
+```{r eval=FALSE}
+phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus"))
+```
+
+Also internal to the `get_fieldlab` function is a call to the `clean_sulfide` function. This function obtains data from the folder specified by the `sulfpath` parameter. Sulfide data files are assumed to be in .xlsx format with a preappended date in YYYYMMDD format. The `clean_sulfide` function retrieves calibration coefficients from all of the individual excel sheet tabs and calculates a sulfide concentration in mM units. This data is then joined to the combined SFWMD lab and phosphous data. The `clean_sulfide` function can be tested with the following command:
+
+```{r eval=FALSE}
+sulfide <- clean_sulfide(sulfpath = file.path("Raw", "lab"))$fielddt
+```
+
+The `get_fieldlab` function can be tested by issuing the following command:
+
+```{r eval=FALSE}
+fieldlab <- get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"),
+limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
+"phosphorus"), sulfpath = file.path("Raw", "lab"))
+```
+
+###Assembly
+
+All of the preceeding field onsite and lab data retrieval/cleaning steps can be run from a single call to the high-level `assemble_field` function. This function runs the preceeding commands, merges the output, and provides an option to save the results to a summary file. It can be run using the following command:
+
+```{r eval=FALSE}
+field <- assemble_field(eddpath = file.path("Raw", "lab", "EDD"),
+limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
+"phosphorus"), sulfpath = file.path("Raw", "lab"), tofile = TRUE)
+```
+
+If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `fieldall.csv`. This file must be manually appended with a version number before old versions can be moved to the `Archive` folder.
+
+##Key Largo Mesocosm Experiments
+
+###Onsite Data
+
+The `get_mesoonsite` function can be used to obtain cleaned onsite data from the FBISC mesocosm studies. This function searches the folder specified by the `onsitepath` parameter for the latest onsite files from FBISC mesocosms. It assumes that file names have been preappended with a date in YYYYMMDD format.
+Within-core replicates are averaged in preparation for joining to the lab data. The `get_mesoonsite` function can be tested by running the following command:
+
+```{r eval=FALSE}
+mesoonsite <- get_mesoonsite(onsitepath = file.path("Raw", "onsite"), experiment = "SoilPlant")
+```
+
+###Lab Data
+
+The `get_mesolab` function is used to obtain cleaned lab data for the FBISC mesocosm experiments. First, this function gathers all the files from the folder specified by the `eddpath` parameter and creates an `SQLite` database. Second, field duplicates are averaged together with the standard samples. Third, crypt and core labels are extracted from the location field. These crypt and core labels are used to create a "treatment" (trt) field. 
+
+Interally, the `get_mesolab` function calls the `clean_sulfide` function. This function obtains data from the folder specified by the `sulfpath` parameter. Sulfide data files are assumed to be in .xlsx format with a preappended date in YYYYMMDD format. The `clean_sulfide` function retrieves calibration coefficients from all of the individual excel sheet tabs and calculates a sulfide concentration in mM units. This data is then joined to the SFWMD lab data. The `clean_sulfide` function can be tested with the following command:
+
+```{r eval=FALSE}
+sulfide <- clean_sulfide(sulfpath = file.path("Raw", "lab"))$mesodt
+```
+
+The `get_mesolab` function can be tested by issuing the following command:
+
+```{r eval=FALSE}
+mesolab <- get_mesolab(mesoonsite, eddpath = file.path("Raw", "lab", "EDD"),
+limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
+"phosphorus"), sulfpath = file.path("Raw", "lab"))
+```
+
+###Assembly
+
+All of the preceeding mesocosm onsite and lab data retrieval/cleaning steps can be run from a single call to the high-level `assemble_meso` function. This function runs the preceeding commands, merges the output, and provides an option to save the results to a summary file. It can be run using the following command:
+
+```{r eval=FALSE}
+meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
+sulfpath = file.path("Raw", "lab"), tofile = FALSE)
+```
+
+If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `mesoall_soilplant.csv` or `mesoall_soilonly.csv`. These files must be manually appended with a version number before old versions can be moved to the `Archive` folder.
