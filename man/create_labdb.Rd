@@ -11,6 +11,8 @@ create_labdb(eddpath = file.path("Raw", "lab", "EDD"),
 \item{eddpath}{character file.path to edd data folder}
 
 \item{dbname}{character file name of output SQLite database}
+
+\item{tablename}{character name of internal database table}
 }
 \description{
 Create sqlite database of peatcollapse lab data

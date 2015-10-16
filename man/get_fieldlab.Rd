@@ -4,14 +4,22 @@
 \alias{get_fieldlab}
 \title{Get lab results from Field Study}
 \usage{
-get_fieldlab(fieldonsite, addlims = TRUE, limspath = "inst/extdata/Raw/lab")
+get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"),
+  limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
+  "phosphorus"), sulfpath = file.path("Raw", "lab"), addlims = TRUE)
 }
 \arguments{
 \item{fieldonsite}{data.frame output of get_fieldonsite}
 
-\item{addlims}{logical integrate lims data with edd data?}
+\item{eddpath}{character folder.path to folder containing edd data}
 
 \item{limspath}{character folder.path to folder containing lims data}
+
+\item{ppath}{character folder.path to folder containing phosphorus data}
+
+\item{sulfpath}{character folder.path to folder containing sulfide data}
+
+\item{addlims}{logical integrate lims data with edd data?}
 }
 \description{
 Get lab results from Field Study

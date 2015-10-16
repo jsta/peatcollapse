@@ -1,6 +1,5 @@
 #'@name create_labdb
 #'@title Create sqlite database of peatcollapse lab data
-#'@import jsta
 #'@import RSQLite
 #'@param eddpath character file.path to edd data folder
 #'@param dbname character file name of output SQLite database
@@ -44,7 +43,7 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
   
   fullcentury <- gsub("/", "", sapply(edd$collect_date, function(x) strsplit(x, " ")[[1]][1]))
   fullcentury <- sapply(fullcentury, function(x) gsub("20", "", x))
-  edd$collect_date <- jsta::date456posix(fullcentury, century = 20)
+  edd$collect_date <- date456posix(fullcentury, century = 20)
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   invisible(RSQLite::dbWriteTable(conn = eddlab, name = tablename, value = edd, overwrite = TRUE))
@@ -94,14 +93,16 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 #'@import DBI
 #'@param project character choice of "soil" or "soilplant"
 #'@param dbname character file.path of edd database
+#'@param eddpath character folder.path to folder containing edd data
+#'@param sulfpath character folder.path to folder containing sulfide data
 #'@export
 #'@examples \dontrun{
 #'clab <- get_mesolab(project = "soilplant")
 #'}
-get_mesolab <- function(project = "soilplant", dbname = "pc_eddlab.db"){
+get_mesolab <- function(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), project = "soilplant", dbname = "pc_eddlab.db"){
   
   #update database and format data====================================#
-  create_labdb()
+  create_labdb(eddpath = eddpath)
   clean_lab()
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
@@ -207,11 +208,9 @@ get_mesolab <- function(project = "soilplant", dbname = "pc_eddlab.db"){
     dt <- dt[dt$date >= plantinterval[1] & dt$date <= plantinterval[2],]
   }
 
-  #browser()  
   #merge sulfide by approximating to the nearest wq date===============#
-  sulfide <- clean_sulfide()$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
+  sulfide <- clean_sulfide(sulfpath = sulfpath)$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
 
-  
   align_sulfide_dates <- function(x, dates = dt$date){
     if(any(abs(difftime(x, dates)) < 12)){
       dates[which.min(abs(difftime(x, dates)))]
@@ -229,18 +228,21 @@ get_mesolab <- function(project = "soilplant", dbname = "pc_eddlab.db"){
   }
 
 #'@name get_fieldlab
-#'@import jsta
 #'@title Get lab results from Field Study
-#'@param addlims logical integrate lims data with edd data?
-#'@param limspath character folder.path to folder containing lims data
 #'@param fieldonsite data.frame output of get_fieldonsite
+#'@param eddpath character folder.path to folder containing edd data
+#'@param limspath character folder.path to folder containing lims data
+#'@param ppath character folder.path to folder containing phosphorus data
+#'@param sulfpath character folder.path to folder containing sulfide data
+#'@param addlims logical integrate lims data with edd data?
 #'@export
 #'@examples
 #'\dontrun{
 #'dt <- get_fieldlab(fieldonsite = fieldonsite)
 #'}
-get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/Raw/lab"){
-  create_labdb()
+get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"), addlims = TRUE){
+  
+  create_labdb(eddpath = eddpath)
   clean_lab()
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), "pc_eddlab.db")
@@ -250,19 +252,14 @@ get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/R
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
   
-  
   #==================================================================#
   align_dates <- function(x, dates = fieldonsite$collect_date){
     dates[which.min(abs(difftime(x, dates)))]
   }
   
   dt$collect_date <- do.call(c, mapply(align_dates, dt$collect_date, SIMPLIFY = FALSE))
-  
-  
+
   #==================================================================#
-  #dt[which(dt$collect_date == "2015-04-13" & dt$location == "BW-P-16"),]
-  #
-  
   dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
   dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
   dt$trt <- NA
@@ -270,7 +267,7 @@ get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/R
   dt$chamber <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,3])
   dt <- dt[nchar(dt$chamber) < 3,]
   
-  #dt[nchar(dt$chamber) == 3,] #is S-199 samples
+  #dt[nchar(dt$chamber) == 3,] #these are S-199 samples
   
   dt$chamber <- suppressWarnings(as.numeric(as.character(dt$chamber)))
   dt[dt$chamber > 9 & dt$site == "BW", "trt"] <- "treatment"
@@ -283,10 +280,9 @@ get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/R
   if(addlims == TRUE){
     limspaths <- list.files(limspath, pattern = "csv", include.dirs = TRUE, full.names = TRUE)
     
-    source("R/old/cleanlab.R")
     lims <- cleanlab(limspaths)
     names(lims)[names(lims) %in% c("date", "station", "pwsw", "sample_id")] <- c("collect_date", "location", "cust_sample_id", "matrix")
-    lims <- jsta::align_dfcol(target = lims, template = dt)
+    lims <- align_dfcol(target = lims, template = dt)
    
     align_dates <- function(x, dates = fieldonsite$collect_date){
       dates[which.min(abs(difftime(x, dates)))]
@@ -299,7 +295,7 @@ get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/R
   dt$inout <- "in"
 
 #merge phosphorus======================================================#
-  phosdt <- clean_p()
+  phosdt <- clean_p(ppath = ppath)
   dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
   
 #   phosdt[phosdt$collect_date == "2015-04-15" & phosdt$site == "BW" & phosdt$matrix == "PW" & phosdt$chamber == "16",]
@@ -311,47 +307,38 @@ get_fieldlab <- function(fieldonsite, addlims = TRUE, limspath = "inst/extdata/R
 
 #merge sulfide=========================================================#
   #merge sulfide by approximating to the nearest wq date===============#
-  sulfide <- clean_sulfide()$fielddt
-  
-  
+  sulfide <- clean_sulfide(sulfpath = sulfpath)$fielddt
+
   align_sulfide_dates <- function(x, df = dt){
     
     dfsub <- df[df$site == x["site"],]
     dfsub$collect_date[which.min(abs(difftime(x["collect_date"], dfsub$collect_date)))]
   }
   
-  
-  
   sulfide$collect_date <- strftime(as.POSIXct(apply(sulfide, 1, function(x) align_sulfide_dates(x)), origin = "1970-01-01", tz = "EST"), format = "%Y-%m-%d")
     
-#   sulfide$collect_date <- do.call(c,mapply(align_sulfide_dates, sulfide$date, SIMPLIFY = FALSE))
-
   sulfide$inout <- "in"
   sulfide$matrix <- "PW"
-  
-  
-  
+
   dt <- merge(dt, sulfide, by = c("site", "chamber", "collect_date", "matrix", "inout"), all.x = TRUE)
-  
-  
+
   return(dt)
 }
 
 #'@name clean_sulfide
 #'@title Clean sulfide data
+#'@export
 #'@import gdata
 #'@param sulfpath character file path to an .xlsx file
 #'@param sheet_nums numeric sheet indices containing raw data
 #'@examples \dontrun{
 #'dt <- clean_sulfide()
 #'}
-clean_sulfide <- function(sulfpath = NA, sheet_nums = NA){
+clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
   
   #check for fxn inputs================================================#
-  if(is.na(sulfpath)){
-    flist <- list.files(file.path("inst", "extdata", "Raw", "lab"), pattern = "Sulfide*", full.names = TRUE, include.dirs = TRUE)
-    sulfpath <- flist[which.max(suppressWarnings(as.numeric(substring(unlist(lapply(flist, function(x) unlist(strsplit(x, "/"))[5])), 1, 8))))]
-  }
+    flist <- list.files(sulfpath, pattern = "Sulfide*", full.names = TRUE, include.dirs = TRUE)
+    sulfpath <- flist[which.max(suppressWarnings(as.numeric(substring(unlist(lapply(flist, function(x) unlist(strsplit(x, "/"))[3])), 1, 8))))]
   
   if(is.na(sheet_nums)){
     sheet_nums <- which(unlist(lapply(gdata::sheetNames(sulfpath), function(x) length(unlist(strsplit(x, "\\."))))) == 3)
@@ -423,17 +410,16 @@ clean_sulfide <- function(sulfpath = NA, sheet_nums = NA){
 
 #'@name clean_p
 #'@title Clean phosphorus data
+#'@export
 #'@description averages FDs, strips EBs
-#'@param sumpath character file.path to raw phosphorus data
+#'@param ppath character file.path to raw phosphorus data
 #'@examples \dontrun{
 #'dt <- clean_p()
 #'}
-clean_p <- function(sumpath = NA){
+clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   
-  if(is.na(sumpath)){
-    flist <- list.files(file.path("inst", "extdata", "Raw", "lab", "phosphorus"), full.names = TRUE, include.dirs = TRUE)
-    sumpath <- flist[grep("labp", tolower(flist))]
-  }
+  flist <- list.files(ppath, full.names = TRUE, include.dirs = TRUE)
+  sumpath <- flist[grep("labp", tolower(flist))]
   
   dt1 <- read.csv(sumpath, stringsAsFactors=F)
   names(dt1)<-tolower(names(dt1))

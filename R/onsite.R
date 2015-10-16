@@ -1,24 +1,20 @@
 #'@name get_mesoonsite
 #'@title Get mesocosm onsite data
 #'@param experiment character choice of "soilplant" or "soil"
-#'@param folderpath character file.path to onsite raw data
+#'@param onsitepath character file.path to onsite raw data
 #'@export
-get_mesoonsite <- function(folderpath = file.path("Raw", "onsite"), experiment = "SoilPlant"){
+get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment = "SoilPlant"){
   
-  if(is.na(dtpath)){
-    flist <- list.files(folderpath, full.names = TRUE, include.dirs = TRUE)
+    flist <- list.files(onsitepath, full.names = TRUE, include.dirs = TRUE)
     flist <- flist[grep(tolower(experiment), tolower(flist))]
     
     dtpath <- flist[which.max(as.numeric(substring(unlist(lapply(strsplit(flist,"/"), function(x) unlist(x[3]))), 1, 8)))]
     
-  }
-  
   #'@name cmesoonsite
-  #'@import jsta
   #'@param sumpathlist list of file paths
   #'@param pwsw return only pw, sw, or all?
   #'@description Removes entries tagged in the "timing.of.sample.with.dosing" field of anything other than "1 day post"
-  cmesoonsite<-function(sumpathlist,pwsw="all"){
+  cmesoonsite<-function(sumpathlist, pwsw = "all"){
     
     full<-list()
     
@@ -31,14 +27,12 @@ get_mesoonsite <- function(folderpath = file.path("Raw", "onsite"), experiment =
         dt<-dt[dt$exp!="Source",]
       }
       
-      #browser()
-      dt$sampling.date <- sapply(dt$sampling.date,jsta::mdy2mmyyyy)
+      dt$sampling.date <- sapply(dt$sampling.date, mdy2mmyyyy)
       
       names(dt)[names(dt)=="sampling.date"]<-"date"
       dt$date<-as.POSIXct(strptime(dt$date,"%m/%d/%Y"))
       
       names(dt)[names(dt)=="core.."]<-"core"
-      #browser()
       dt$core<-suppressWarnings(as.integer(gsub("/","",dt$core)))
       names(dt)[names(dt)=="sample.source"]<-"pwsw"
       names(dt)[names(dt)=="crypt.tank.."]<-"crypt"
@@ -77,27 +71,28 @@ SW,2",sep=",", stringsAsFactors = FALSE)
 }
 
 #'@name get_fieldonsite
-#'@import jsta
 #'@title Get field onsite data
-#'@param folderpath character file.path to folder containing raw onsite data files
+#'@param onsitepath character file.path to folder containing raw onsite data files
 #'@export
 #'@examples \dontrun{
 #'dt <- get_fieldonsite()
 #'}
-get_fieldonsite <- function(folderpath = file.path("Raw", "onsite")){
+get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
   
-  flist <- list.files(folderpath, full.names = TRUE, include.dirs = TRUE)
+  flist <- list.files(onsitepath, full.names = TRUE, include.dirs = TRUE)
   fwpath <- flist[grep(tolower("FreshWFieldData"), tolower(flist))]
-  fwpath <- fwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(fwpath,"/"), function(x) unlist(x[5]))), 1, 8)))]
+  fwpath <- fwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(fwpath,"/"), function(x) unlist(x[3]))), 1, 8)))]
     
   bwpath <- flist[grep(tolower("BrackishWFieldData"), tolower(flist))]
-  bwpath <- bwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(bwpath,"/"), function(x) unlist(x[5]))), 1, 8)))]
+  bwpath <- bwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(bwpath,"/"), function(x) unlist(x[3]))), 1, 8)))]
+  
+  #browser()
     
   cfieldonsite<-function(sumpathlist, pwsw="all"){
       full<-list()
       
       for(i in 1:length(sumpathlist)){
-        dt<-read.csv(sumpathlist[i], skip = 1, stringsAsFactors = F)
+        dt <- read.csv(sumpathlist[i], skip = 1, stringsAsFactors = F)
         names(dt) <- tolower(names(dt))
         
         if(any(names(dt) == "timing.of.sample.with.dosing")){
@@ -109,7 +104,7 @@ get_fieldonsite <- function(folderpath = file.path("Raw", "onsite")){
         names(dt)[c(1,4,5)]<-c("date","pwsw","trt")
         
         if(mean(nchar(dt$date))<8){
-          dt$date <- sapply(dt$date,jsta::mdy2mmyyyy)
+          dt$date <- sapply(dt$date, mdy2mmyyyy)
         }
         
         dt$date<-as.POSIXct(strptime(dt$date,"%m/%d/%Y"))
@@ -133,7 +128,7 @@ get_fieldonsite <- function(folderpath = file.path("Raw", "onsite")){
         dtagg[,5:ncol(dtagg)] <- round(dtagg[,5:ncol(dtagg)], 3)
         
         dtagg<-dtagg[order(dtagg$inout,dtagg$date),]
-        dtagg$site<-paste(substring(sumpathlist[i],49,49),"W",sep="")
+        dtagg$site<-paste(substring(sumpathlist[i],36,36),"W",sep="")
         full[[i]]<-dtagg    
       }
       do.call(rbind,full)

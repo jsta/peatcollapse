@@ -7,8 +7,8 @@
 #' dt <- assemble_meso(tofile = TRUE)
 #' }
 assemble_meso <- function(project = "soilplant", tofile = FALSE){
-  source("R/lab.R")
-  source("R/onsite.R")
+  #source("R/lab.R")
+  #source("R/onsite.R")
   
   mesolab <- get_mesolab(project = project)
   mesoonsite <- get_mesoonsite(experiment = project)
@@ -38,7 +38,7 @@ assemble_meso <- function(project = "soilplant", tofile = FALSE){
   cmesoall[is.na(cmesoall$station),]$station <- stationmiss$station 
   
   #cmesoall <- cmesoall[with(cmesoall, order(crypt, pwsw, date, core)),]
-  source("R/misc.R")
+  #source("R/misc.R")
   cmesoall <- mesokey(cmesoall)
   cmesoall <- cmesoall[order(cmesoall$pwsw, cmesoall$date, cmesoall$core, cmesoall$station, cmesoall$trt),]
   
@@ -57,23 +57,26 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
   names(cmesoall)[names(cmesoall) %in% unitkey[,1]] <- unitkey[na.omit(match(names(cmesoall), unitkey[,1])), 2]
   
   if(tofile == TRUE){
-    write.csv(cmesoall,file.path("inst", "extdata", paste0("mesoall_", project, ".csv")), row.names = FALSE)
+    write.csv(cmesoall,file.path(paste0("mesoall_", project, ".csv")), row.names = FALSE)
   }
 }
 
 #'@name assemble_field
 #'@title Assemble field data file from onsite and lab data
+#'@param onsitepath character folder.path to folder containing onsite data
+#'@param eddpath character folder.path to folder containing edd data
+#'@param limspath character folder.path to folder containing lims data
+#'@param ppath character folder.path to folder containing phosphorus data
+#'@param sulfpath character folder.path to folder containing sulfide data
 #'@param tofile logical print results to file?
 #'@export
 #'@examples \dontrun{
 #'dt <- assemble_field(tofile = TRUE)
 #'}
-assemble_field <- function(tofile = TRUE){
-  source("R/lab.R")
-  source("R/onsite.R")
+assemble_field <- function(onsitepath = file.path("Raw", "onsite"), eddpath = file.path("Raw", "lab", "EDD") , limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus") , sulfpath = file.path("Raw", "lab"), tofile = TRUE){
   
-  fieldonsite <- get_fieldonsite()
-  fieldlab <- get_fieldlab(fieldonsite = fieldonsite, addlims = TRUE)
+  fieldonsite <- get_fieldonsite(onsitepath = onsitepath)
+  fieldlab <- get_fieldlab(fieldonsite = fieldonsite, eddpath = eddpath, limspath = limspath, ppath = ppath, sulfpath = sulfpath, addlims = TRUE)
   names(fieldlab)[names(fieldlab) == "matrix"] <- "pwsw"
   
   align_dates <- function(x, dates = fieldonsite$collect_date){
@@ -110,7 +113,7 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
 #==================================================================#
   #print(paste(nrow(cfieldall), "rows output"))
   if(tofile == TRUE){
-    write.csv(cfieldall, file.path("inst", "extdata", "fieldall.csv"), row.names = FALSE)
+    write.csv(cfieldall, file.path("fieldall.csv"), row.names = FALSE)
   }
   
   cfieldall

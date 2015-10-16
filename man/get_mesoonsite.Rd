@@ -4,11 +4,11 @@
 \alias{get_mesoonsite}
 \title{Get mesocosm onsite data}
 \usage{
-get_mesoonsite(folderpath = file.path("Raw", "onsite"),
+get_mesoonsite(onsitepath = file.path("Raw", "onsite"),
   experiment = "SoilPlant")
 }
 \arguments{
-\item{folderpath}{character file.path to onsite raw data}
+\item{onsitepath}{character file.path to onsite raw data}
 
 \item{experiment}{character choice of "soilplant" or "soil"}
 }

@@ -4,9 +4,22 @@
 \alias{assemble_field}
 \title{Assemble field data file from onsite and lab data}
 \usage{
-assemble_field(tofile = TRUE)
+assemble_field(onsitepath = file.path("Raw", "onsite"),
+  eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw",
+  "lab"), ppath = file.path("Raw", "lab", "phosphorus"),
+  sulfpath = file.path("Raw", "lab"), tofile = TRUE)
 }
 \arguments{
+\item{onsitepath}{character folder.path to folder containing onsite data}
+
+\item{eddpath}{character folder.path to folder containing edd data}
+
+\item{limspath}{character folder.path to folder containing lims data}
+
+\item{ppath}{character folder.path to folder containing phosphorus data}
+
+\item{sulfpath}{character folder.path to folder containing sulfide data}
+
 \item{tofile}{logical print results to file?}
 }
 \description{

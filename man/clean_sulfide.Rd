@@ -4,7 +4,7 @@
 \alias{clean_sulfide}
 \title{Clean sulfide data}
 \usage{
-clean_sulfide(sulfpath = NA, sheet_nums = NA)
+clean_sulfide(sulfpath = file.path("Raw", "lab"), sheet_nums = NA)
 }
 \arguments{
 \item{sulfpath}{character file path to an .xlsx file}

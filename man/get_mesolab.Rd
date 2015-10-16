@@ -4,10 +4,18 @@
 \alias{get_mesolab}
 \title{Get mesocosm lab data}
 \usage{
-get_mesolab(project = "soilplant", dbname = "pc_eddlab.db")
+get_mesolab(eddpath = file.path("Raw", "lab", "EDD"),
+  sulfpath = file.path("Raw", "lab"), project = "soilplant",
+  dbname = "pc_eddlab.db")
 }
 \arguments{
+\item{eddpath}{character folder.path to folder containing edd data}
+
+\item{sulfpath}{character folder.path to folder containing sulfide data}
+
 \item{project}{character choice of "soil" or "soilplant"}
+
+\item{dbname}{character file.path of edd database}
 }
 \description{
 Get mesocosm lab data

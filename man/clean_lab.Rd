@@ -8,6 +8,10 @@ clean_lab(dbname = "pc_eddlab.db", tablename = "eddlab",
   begindate = "2014-09-07")
 }
 \arguments{
+\item{dbname}{character file.path of edd database}
+
+\item{tablename}{character name of internal database table}
+
 \item{begindate}{character date in YYYY-MM-DD format specifying a lower limit on the date of measurements to return}
 }
 \value{

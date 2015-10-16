@@ -4,10 +4,10 @@
 \alias{clean_p}
 \title{Clean phosphorus data}
 \usage{
-clean_p(sumpath = NA)
+clean_p(ppath = file.path("Raw", "lab", "phosphorus"))
 }
 \arguments{
-\item{sumpath}{character file.path to raw phosphorus data}
+\item{ppath}{character file.path to raw phosphorus data}
 }
 \description{
 averages FDs, strips EBs

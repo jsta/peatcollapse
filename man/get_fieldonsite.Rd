@@ -4,7 +4,10 @@
 \alias{get_fieldonsite}
 \title{Get field onsite data}
 \usage{
-get_fieldonsite(folderpath = file.path("Raw", "onsite"))
+get_fieldonsite(onsitepath = file.path("Raw", "onsite"))
+}
+\arguments{
+\item{onsitepath}{character file.path to folder containing raw onsite data files}
 }
 \description{
 Get field onsite data
