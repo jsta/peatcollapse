@@ -328,7 +328,7 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 #'@name clean_sulfide
 #'@title Clean sulfide data
 #'@export
-#'@import gdata
+#'@import readxl
 #'@param sulfpath character file path to an .xlsx file
 #'@param sheet_nums numeric sheet indices containing raw data
 #'@examples \dontrun{
@@ -341,8 +341,9 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
     sulfpath <- flist[which.max(suppressWarnings(as.numeric(substring(unlist(lapply(flist, function(x) unlist(strsplit(x, "/"))[3])), 1, 8))))]
   
   if(is.na(sheet_nums)){
-    sheet_nums <- which(unlist(lapply(gdata::sheetNames(sulfpath), function(x) length(unlist(strsplit(x, "\\."))))) == 3)
-  }
+    #sheet_nums <- which(unlist(lapply(gdata::sheetNames(sulfpath), function(x) length(unlist(strsplit(x, "\\."))))) == 3)
+    sheet_nums <- which(unlist(lapply(readxl::excel_sheets(sulfpath), function(x) length(unlist(strsplit(x, "\\."))))) == 3)
+    }
 
   #get calibration coef================================================#
   get_calibration <- function(sulfpath, sheet_nums){
@@ -352,13 +353,23 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
     bs <- vector("list", length(sheet_nums))
     
     for(i in sheet_nums){
-      ab <- as.character(gdata::read.xls(xls = sulfpath, sheet = i)[9:12, 3])
-      ab <- ab[nchar(ab) > 0]
       
-      b <- as.numeric(ab[2])
-      a <- as.numeric(paste(strsplit(ab[1], ".E")[[1]][1], strsplit(ab[1], ".E")[[1]][2], sep = "e"))
-        
-      date <- gsub("X", "", names(gdata::read.xls(xls = sulfpath, sheet = i, blank.lines.skip =FALSE))[1])
+      #ab <- as.character(gdata::read.xls(xls = sulfpath, sheet = i)[9:12, 3])
+      #ab <- ab[nchar(ab) > 0]
+      #b <- as.numeric(ab[2])
+      #a <- as.numeric(paste(strsplit(ab[1], ".E")[[1]][1], strsplit(ab[1], ".E")[[1]][2], sep = "e"))
+      #date <- gsub("X", "", names(gdata::read.xls(xls = sulfpath, sheet = i, blank.lines.skip =FALSE))[1])
+      
+      dtxlsx <- readxl::read_excel(path = sulfpath, sheet = i, col_names = TRUE, col_types = NULL, na = "missing")[10:12, c(1,3)]
+      daterow <- max(which(is.na(dtxlsx[,1]))) + 1
+      
+      date <- as.POSIXct((as.numeric(dtxlsx[daterow, 1]) - 1)  * 24 * 60 * 60, origin = "1900-01-01", tz = "EDT")
+      
+      ab <- as.numeric(dtxlsx[(daterow-1):daterow, 2])
+      b <- ab[2]
+      a <- ab[1]
+      
+      #print(c(a, b, date))
       
       sheet_pos <- which(sheet_nums %in% i)
       dates[[sheet_pos]] <- date
@@ -371,28 +382,31 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
   }
   
   calibration <- get_calibration(sulfpath = sulfpath, sheet_nums = sheet_nums)
-  calibration$date <- as.POSIXct(strptime(calibration$date, format = "%Y.%m.%d"))
+  calibration$date <- strftime(as.POSIXct(calibration$date, origin = "1970-01-01"), format = "%Y-%m-%d")
   
-  fielddt <- gdata::read.xls(xls = sulfpath, stringsAsFactors = FALSE)[,1:6]
-  mesodt <- gdata::read.xls(xls = sulfpath, sheet = grep("meso", tolower(gdata::sheetNames(sulfpath))) , stringsAsFactors = FALSE)[,1:6]
+  #fielddt <- gdata::read.xls(xls = sulfpath, stringsAsFactors = FALSE)[,1:6]
+  #mesodt <- gdata::read.xls(xls = sulfpath, sheet = grep("meso", tolower(gdata::sheetNames(sulfpath))) , stringsAsFactors = FALSE)[,1:6]
+  
+  fielddt <- suppressWarnings(readxl::read_excel(sulfpath)[,1:6])
+  mesodt <- readxl::read_excel(sulfpath, "Mesos Raw")[,1:6]
   
   clean_sulfdt <- function(dt){
+    names(dt) <- tolower(names(dt))
+    
+    dt$date <- as.POSIXct(dt$date)
+    attr(dt$date, "tzone") <- "EDT"
+    dt$date <- as.character(dt$date)
+    dt$mv <- suppressWarnings(as.numeric(dt$mv))
   
-  names(dt) <- tolower(names(dt))
-  dt$date <- as.POSIXct(dt$date)
-  dt$mv <- suppressWarnings(as.numeric(dt$mv))
+    dt <- merge(dt, calibration, by.x = "date", by.y = "date")
+    dt$ppm <- dt$a * exp(dt$b * dt$mv)
+    dt$sulfide.mm <- dt$ppm / 32 #molecular weight
   
-  dt <- merge(dt, calibration, by.x = "date", by.y = "date")
-  dt$ppm <- dt$a * exp(dt$b * dt$mv)
-  dt$sulfide.mm <- dt$ppm / 32 #molecular weight
-  
-  dt
+    dt
   }
   
   mesodt <- clean_sulfdt(mesodt)
   mesodt$datesulfide <- mesodt$date
-  
-  #browser()
   
   #==================================================================#
   fielddt <- clean_sulfdt(fielddt)
