@@ -10,6 +10,6 @@ License: GPL (>= 2)
 LazyData: true
 NeedsCompilation: no
 Suggests: knitr,
-    rmarkdown
+    rmarkdown, testthat
 VignetteBuilder: knitr
 Imports: RSQLite,readxl,reshape2,DBI
