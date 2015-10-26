@@ -138,10 +138,10 @@ All of the preceeding field onsite and lab data retrieval/cleaning steps can be 
 ```{r eval=FALSE}
 field <- assemble_field(eddpath = file.path("Raw", "lab", "EDD"),
 limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
-"phosphorus"), sulfpath = file.path("Raw", "lab"), tofile = TRUE)
+"phosphorus"), sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 ```
 
-If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `fieldall.csv`. This file must be manually appended with a version number before old versions can be moved to the `Archive` folder.
+If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `fieldall.csv`. This file should be manually appended with a version number before old versions can be moved to the `Archive` folder.
 
 ##Key Largo Mesocosm Experiments
 
@@ -181,4 +181,4 @@ meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
 sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 ```
 
-If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `mesoall_soilplant.csv` or `mesoall_soilonly.csv`. These files must be manually appended with a version number before old versions can be moved to the `Archive` folder.
+If the `tofile` parameter is set to `TRUE`, a summary file will be saved to the current working directory under the name `mesoall_soilplant.csv` or `mesoall_soilonly.csv`. These files should be manually appended with a version number before old versions can be moved to the `Archive` folder.
