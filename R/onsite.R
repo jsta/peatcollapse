@@ -75,7 +75,7 @@ SW,2",sep=",", stringsAsFactors = FALSE)
 #'@param onsitepath character file.path to folder containing raw onsite data files
 #'@export
 #'@examples \dontrun{
-#'dt <- get_fieldonsite()
+#'fieldonsite <- get_fieldonsite(onsitepath = file.path("Raw", "onsite"))
 #'}
 get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
   

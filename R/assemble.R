@@ -34,7 +34,10 @@ assemble_meso <- function(project = "soilplant", tofile = FALSE){
   #fill-in missing station entries
   stationmiss <- cmesoall[is.na(cmesoall$station),]
   stationmiss$station <- paste0("C", stationmiss$crypt, "C", stationmiss$core)
-  stationmiss[is.na(stationmiss$core),]$station <- paste0("C", stationmiss[is.na(stationmiss$core),]$crypt)
+  if(length(stationmiss[is.na(stationmiss$core),]$station) > 0){
+    stationmiss[is.na(stationmiss$core),]$station <- paste0("C", stationmiss[is.na(stationmiss$core),]$crypt)
+  }
+  
   cmesoall[is.na(cmesoall$station),]$station <- stationmiss$station 
   
   #cmesoall <- cmesoall[with(cmesoall, order(crypt, pwsw, date, core)),]
@@ -71,7 +74,7 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
 #'@param tofile logical print results to file?
 #'@export
 #'@examples \dontrun{
-#'dt <- assemble_field(tofile = TRUE)
+#'field <- assemble_field(tofile = TRUE)
 #'}
 assemble_field <- function(onsitepath = file.path("Raw", "onsite"), eddpath = file.path("Raw", "lab", "EDD") , limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus") , sulfpath = file.path("Raw", "lab"), tofile = TRUE){
   

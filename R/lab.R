@@ -238,7 +238,7 @@ get_mesolab <- function(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = fil
 #'@export
 #'@examples
 #'\dontrun{
-#'dt <- get_fieldlab(fieldonsite = fieldonsite)
+#'fieldlab <- get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"))
 #'}
 get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"), addlims = TRUE){
   
@@ -310,9 +310,14 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   sulfide <- clean_sulfide(sulfpath = sulfpath)$fielddt
 
   align_sulfide_dates <- function(x, df = dt){
-    
     dfsub <- df[df$site == x["site"],]
-    dfsub$collect_date[which.min(abs(difftime(x["collect_date"], dfsub$collect_date)))]
+    
+    #add minimum tolerance of 10 days
+    if(any(abs(difftime(x["collect_date"], dfsub$collect_date)) <= 10)){
+      dfsub$collect_date[which.min(abs(difftime(x["collect_date"], dfsub$collect_date)))]
+    }else{
+      NA
+    }
   }
   
   sulfide$collect_date <- strftime(as.POSIXct(apply(sulfide, 1, function(x) align_sulfide_dates(x)), origin = "1970-01-01", tz = "EST"), format = "%Y-%m-%d")
@@ -332,7 +337,7 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 #'@param sulfpath character file path to an .xlsx file
 #'@param sheet_nums numeric sheet indices containing raw data
 #'@examples \dontrun{
-#'dt <- clean_sulfide()
+#'sulfide <- clean_sulfide(sulfpath = file.path("Raw", "lab"))$fielddt
 #'}
 clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
   
@@ -428,7 +433,7 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
 #'@description averages FDs, strips EBs
 #'@param ppath character file.path to raw phosphorus data
 #'@examples \dontrun{
-#'dt <- clean_p()
+#'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus"))
 #'}
 clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   
