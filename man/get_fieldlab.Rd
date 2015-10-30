@@ -26,7 +26,7 @@ Get lab results from Field Study
 }
 \examples{
 \dontrun{
-dt <- get_fieldlab(fieldonsite = fieldonsite)
+fieldlab <- get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"))
 }
 }
 

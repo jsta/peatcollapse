@@ -27,7 +27,7 @@ Assemble field data file from onsite and lab data
 }
 \examples{
 \dontrun{
-dt <- assemble_field(tofile = TRUE)
+field <- assemble_field(tofile = TRUE)
 }
 }
 

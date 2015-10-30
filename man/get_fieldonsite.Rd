@@ -14,7 +14,7 @@ Get field onsite data
 }
 \examples{
 \dontrun{
-dt <- get_fieldonsite()
+fieldonsite <- get_fieldonsite(onsitepath = file.path("Raw", "onsite"))
 }
 }
 

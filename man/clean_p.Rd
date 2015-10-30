@@ -14,7 +14,7 @@ averages FDs, strips EBs
 }
 \examples{
 \dontrun{
-dt <- clean_p()
+phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus"))
 }
 }
 

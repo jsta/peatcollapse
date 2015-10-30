@@ -16,7 +16,7 @@ Clean sulfide data
 }
 \examples{
 \dontrun{
-dt <- clean_sulfide()
+sulfide <- clean_sulfide(sulfpath = file.path("Raw", "lab"))$fielddt
 }
 }
 
