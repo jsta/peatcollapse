@@ -42,7 +42,7 @@ assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw"
   cmesoall[is.na(cmesoall$station),]$station <- stationmiss$station 
   
   #cmesoall <- cmesoall[with(cmesoall, order(crypt, pwsw, date, core)),]
-  #source("R/misc.R")
+
   cmesoall <- mesokey(cmesoall)
   cmesoall <- cmesoall[order(cmesoall$pwsw, cmesoall$date, cmesoall$core, cmesoall$station, cmesoall$trt),]
   
@@ -57,12 +57,16 @@ NH4-NH4.mgL
 SO4-SO4.mgl
 TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
   
-  names(cmesoall)[!is.na(match(names(cmesoall), unitkey[,1]))]
+  #names(cmesoall)[!is.na(match(names(cmesoall), unitkey[,1]))]
+  
   names(cmesoall)[names(cmesoall) %in% unitkey[,1]] <- unitkey[na.omit(match(names(cmesoall), unitkey[,1])), 2]
   
   if(tofile == TRUE){
     write.csv(cmesoall,file.path(paste0("mesoall_", project, ".csv")), row.names = FALSE)
   }
+  
+  cmesoall
+  
 }
 
 #'@name assemble_field
