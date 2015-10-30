@@ -1,17 +1,18 @@
 #'@name assemble_meso
 #'@title Assemble mesocosm data file from onsite and lab data
-#'@param project character choice of "soilplant" or "soil"
+#'@param experiment character choice of "soilplant" or "soil"
+#'@param onsitepath character folder.path to folder containing onsite data
+#'@param sulfpath character folder.path to folder containing sulfide data
+#'@param eddpath character folder.path to folder containing edd data
 #'@param tofile logical print results to file?
 #'@export
 #'@examples \dontrun{
-#' dt <- assemble_meso(tofile = TRUE)
+#'meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 #' }
-assemble_meso <- function(project = "soilplant", tofile = FALSE){
-  #source("R/lab.R")
-  #source("R/onsite.R")
-  
-  mesolab <- get_mesolab(project = project)
-  mesoonsite <- get_mesoonsite(experiment = project)
+assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
+ 
+  mesolab <- get_mesolab(eddpath = eddpath, sulfpath = sulfpath, project = experiment)
+  mesoonsite <- get_mesoonsite(onsitepath = onsitepath, experiment = experiment)
   
   align_dates <- function(x, dates = mesoonsite$date){
     #x <- mesolab$date[1]

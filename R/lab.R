@@ -92,14 +92,14 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 #'@import reshape2
 #'@import DBI
 #'@param project character choice of "soil" or "soilplant"
-#'@param dbname character file.path of edd database
 #'@param eddpath character folder.path to folder containing edd data
 #'@param sulfpath character folder.path to folder containing sulfide data
+#'@param dbname character file.path of edd database
 #'@export
 #'@examples \dontrun{
-#'clab <- get_mesolab(project = "soilplant")
+#'mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"))
 #'}
-get_mesolab <- function(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), project = "soilplant", dbname = "pc_eddlab.db"){
+get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db"){
   
   #update database and format data====================================#
   create_labdb(eddpath = eddpath)

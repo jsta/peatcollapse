@@ -167,9 +167,7 @@ sulfide <- clean_sulfide(sulfpath = file.path("Raw", "lab"))$mesodt
 The `get_mesolab` function can be tested by issuing the following command:
 
 ```{r eval=FALSE}
-mesolab <- get_mesolab(mesoonsite, eddpath = file.path("Raw", "lab", "EDD"),
-limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab",
-"phosphorus"), sulfpath = file.path("Raw", "lab"))
+mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"))
 ```
 
 ###Assembly
