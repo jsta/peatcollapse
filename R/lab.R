@@ -368,7 +368,8 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
       dtxlsx <- readxl::read_excel(path = sulfpath, sheet = i, col_names = TRUE, col_types = NULL, na = "missing")[10:12, c(1,3)]
       daterow <- max(which(is.na(dtxlsx[,1]))) + 1
       
-      date <- as.POSIXct((as.numeric(dtxlsx[daterow, 1]) - 1)  * 24 * 60 * 60, origin = "1900-01-01", tz = "EDT")
+      intdate <- (as.numeric(dtxlsx[daterow, 1]) - 1)  * 24 * 60 * 60
+      date <- as.POSIXct(intdate, origin = "1900-01-01", tz = "America/New_York")
       
       ab <- as.numeric(dtxlsx[(daterow-1):daterow, 2])
       b <- ab[2]
@@ -393,13 +394,15 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
   #mesodt <- gdata::read.xls(xls = sulfpath, sheet = grep("meso", tolower(gdata::sheetNames(sulfpath))) , stringsAsFactors = FALSE)[,1:6]
   
   fielddt <- suppressWarnings(readxl::read_excel(sulfpath)[,1:6])
+  
   mesodt <- readxl::read_excel(sulfpath, "Mesos Raw")[,1:6]
   
   clean_sulfdt <- function(dt){
     names(dt) <- tolower(names(dt))
     
-    dt$date <- as.POSIXct(dt$date)
-    attr(dt$date, "tzone") <- "EDT"
+    dt$date <- as.POSIXct(dt$date, tz = "America/New_York")
+    
+    #attr(dt$date, "tzone") <- "America/New_York"
     dt$date <- as.character(dt$date)
     dt$mv <- suppressWarnings(as.numeric(dt$mv))
   
