@@ -4,10 +4,18 @@
 \alias{assemble_meso}
 \title{Assemble mesocosm data file from onsite and lab data}
 \usage{
-assemble_meso(project = "soilplant", tofile = FALSE)
+assemble_meso(experiment = "soilplant", onsitepath = file.path("Raw",
+  "onsite"), sulfpath = file.path("Raw", "lab"), eddpath = file.path("Raw",
+  "lab", "EDD"), tofile = FALSE)
 }
 \arguments{
-\item{project}{character choice of "soilplant" or "soil"}
+\item{experiment}{character choice of "soilplant" or "soil"}
+
+\item{onsitepath}{character folder.path to folder containing onsite data}
+
+\item{sulfpath}{character folder.path to folder containing sulfide data}
+
+\item{eddpath}{character folder.path to folder containing edd data}
 
 \item{tofile}{logical print results to file?}
 }
@@ -16,7 +24,7 @@ Assemble mesocosm data file from onsite and lab data
 }
 \examples{
 \dontrun{
-dt <- assemble_meso(tofile = TRUE)
+meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 }
 }
 

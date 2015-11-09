@@ -4,16 +4,15 @@
 \alias{get_mesolab}
 \title{Get mesocosm lab data}
 \usage{
-get_mesolab(eddpath = file.path("Raw", "lab", "EDD"),
-  sulfpath = file.path("Raw", "lab"), project = "soilplant",
-  dbname = "pc_eddlab.db")
+get_mesolab(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"),
+  sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db")
 }
 \arguments{
+\item{project}{character choice of "soil" or "soilplant"}
+
 \item{eddpath}{character folder.path to folder containing edd data}
 
 \item{sulfpath}{character folder.path to folder containing sulfide data}
-
-\item{project}{character choice of "soil" or "soilplant"}
 
 \item{dbname}{character file.path of edd database}
 }
@@ -22,7 +21,7 @@ Get mesocosm lab data
 }
 \examples{
 \dontrun{
-clab <- get_mesolab(project = "soilplant")
+mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"))
 }
 }
 

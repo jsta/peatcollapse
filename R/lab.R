@@ -43,7 +43,7 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
   
   fullcentury <- gsub("/", "", sapply(edd$collect_date, function(x) strsplit(x, " ")[[1]][1]))
   fullcentury <- sapply(fullcentury, function(x) gsub("20", "", x))
-  edd$collect_date <- date456posix(fullcentury, century = 20)
+  edd$collect_date <- jsta::date456posix(fullcentury, century = 20)
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   invisible(RSQLite::dbWriteTable(conn = eddlab, name = tablename, value = edd, overwrite = TRUE))
@@ -112,7 +112,27 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
   
-  dt <- reshape2::dcast(dt, collect_date + location + matrix ~ acode,  value.var="result", fun.aggregate=mean)
+  #browser()
+  
+  #return p-numbers associated with both samples and field duplicates
+  align_fd_pnumbers <- function(x, dt){
+  
+    id_info <- paste0(paste0(x[c("matrix", "location")], collapse = ""), as.POSIXct(x["collect_date"]), collapse = "")
+    id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
+    
+    fd_samp_dt <- dt[which(id_info_dt %in% id_info),]
+    if(length(unique(fd_samp_dt$cust_sample_id)) > 1 & nchar(x["cust_sample_id"]) < 10){
+      paste0(unique(fd_samp_dt$cust_sample_id), collapse = "_")
+    }else{
+      x["cust_sample_id"]
+    }
+  }
+  
+  dt$cust_sample_id <- apply(dt, 1, function(x) align_fd_pnumbers(x, dt))
+  
+  dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
+  
+  #dt[duplicated(cbind(dt$collect_date, dt$location, dt$matrix)),]
   
   #add calculated fields==============================================#
   
@@ -210,7 +230,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
 
   #merge sulfide by approximating to the nearest wq date===============#
   sulfide <- clean_sulfide(sulfpath = sulfpath)$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
-
+#browser()
   align_sulfide_dates <- function(x, dates = dt$date){
     if(any(abs(difftime(x, dates)) < 12)){
       dates[which.min(abs(difftime(x, dates)))]
@@ -219,7 +239,8 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
     }
   }
   
-  sulfide$date <- do.call(c,mapply(align_sulfide_dates, sulfide$date, SIMPLIFY = FALSE))
+  sulfide$date <- strftime(as.POSIXct(apply(sulfide, 1, function(x) align_sulfide_dates(as.POSIXct(x[1]))), origin = "1970-01-01", tz = "EST"), format = "%Y-%m-%d")
+#  sulfide$date <- do.call(c,mapply(align_sulfide_dates, sulfide$date, SIMPLIFY = FALSE))
     
   dt <- merge(dt, sulfide, by = c("date","core", "crypt"), all.x = TRUE, all.y = FALSE)
   

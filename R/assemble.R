@@ -13,7 +13,7 @@ assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw"
  
   mesolab <- get_mesolab(eddpath = eddpath, sulfpath = sulfpath, project = experiment)
   mesoonsite <- get_mesoonsite(onsitepath = onsitepath, experiment = experiment)
-  
+
   align_dates <- function(x, dates = mesoonsite$date){
     #x <- mesolab$date[1]
     if(any(abs(difftime(x, dates)) < 4)){
@@ -62,7 +62,7 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
   names(cmesoall)[names(cmesoall) %in% unitkey[,1]] <- unitkey[na.omit(match(names(cmesoall), unitkey[,1])), 2]
   
   if(tofile == TRUE){
-    write.csv(cmesoall,file.path(paste0("mesoall_", project, ".csv")), row.names = FALSE)
+    write.csv(cmesoall,file.path(paste0("mesoall_", experiment, ".csv")), row.names = FALSE)
   }
   
   cmesoall
