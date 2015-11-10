@@ -3,6 +3,10 @@
 #'@param experiment character choice of "soilplant" or "soil"
 #'@param onsitepath character file.path to onsite raw data
 #'@export
+#'@examples
+#'\dontrun{
+#'mesoonsite <- get_mesoonsite(onsitepath = file.path("Raw", "onsite"), experiment = "SoilPlant")
+#'}
 get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment = "SoilPlant"){
   
     flist <- list.files(onsitepath, full.names = TRUE, include.dirs = TRUE)
@@ -23,9 +27,9 @@ get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment =
       dt<-read.csv(sumpathlist[i],skip=1,stringsAsFactors=F)
       names(dt)<-tolower(names(dt))
       
-      if(any(names(dt)=="exp")){
-        dt<-dt[dt$exp!="Source",]
-      }
+#       if(any(names(dt)=="exp")){
+#         dt<-dt[dt$exp!="Source",]
+#       }
       
       dt$sampling.date <- sapply(dt$sampling.date, mdy2mmyyyy)
       
@@ -56,10 +60,24 @@ SW,2",sep=",", stringsAsFactors = FALSE)
       
       dtagg<-aggregate(dt[,12:15],by=list(dt$date,dt$core,dt$pwswc,dt$crypt),function(x) mean(x,na.rm=T))
       
-      names(dtagg)[1:4]<-c("date","core","pwswc","crypt")
-      dtagg<-merge(key,dtagg)
-      dtagg$core[dtagg$core==999]<-NA
-      dtagg<-dtagg[,-1]
+      names(dtagg)[1:4] <- c("date", "core", "pwswc", "crypt")
+      dtagg <- merge(key, dtagg)
+      dtagg$core[dtagg$core == 999] <- NA
+      dtagg <- dtagg[,-1]
+      
+      construct_station <- function(x){
+        if(nchar(x["crypt"]) < 2){
+          if(!is.na(x["core"])){
+          gsub(" ", "", paste0("C", x["crypt"], "C", x["core"]))
+          }else{
+            paste0("C", x["crypt"])
+          }
+        }else{
+          x["crypt"]
+        }
+      }
+      
+      dtagg$station <- apply(dtagg, 1, function(x) construct_station(x))
       
       dtagg<-dtagg[with(dtagg,order(pwsw,date,core,crypt)),]
       full[[i]]<-dtagg    

@@ -75,12 +75,16 @@ mesokey <- function(dt){
   
   names(key)<-c("crypt","core","trt")
   
-  misstrt <- which(is.na(dt$trt))
+  misstrt <- which(is.na(dt$trt) & nchar(dt$station) > 2)
   cdt <- dt[misstrt,]
   cdt <- cdt[, -which(names(cdt) == "trt")]
   cdt <- merge(key, cdt)
   cdt <- cdt[, match(names(dt), names(cdt))]
-  dt[misstrt,] <- cdt
+  
+  if(nrow(cdt) > 0){
+    dt[misstrt,] <- cdt
+  }
+  
   dt
 }
 

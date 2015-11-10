@@ -16,9 +16,10 @@ assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw"
 
   align_dates <- function(x, dates = mesoonsite$date){
     #x <- mesolab$date[1]
-    if(any(abs(difftime(x, dates)) < 4)){
+    if(any(abs(difftime(x, dates)) < 9)){ #adjust numeric tolerance
       dates[which.min(abs(difftime(x, dates)))]
     }else{
+      #test for month offset
       daycandidate <- unique(dates[strftime(x, format = "%Y-%m") == strftime(dates, format = "%Y-%m")])
       daycandidate <- daycandidate[(as.numeric(strftime(x, format = "%d")) %% as.numeric(strftime(daycandidate, format = "%d"))) == 0]
       if(length(daycandidate) > 0){
@@ -30,16 +31,20 @@ assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw"
   }
                                                                           mesolab$date <- do.call(c,mapply(align_dates, mesolab$date, SIMPLIFY = FALSE))
  
-  cmesoall <- merge(mesoonsite, mesolab, by=c("crypt", "core", "date", "pwsw"), all.y = TRUE, all.x = TRUE)
+  cmesoall <- merge(mesoonsite, mesolab, by=c("station", "date", "pwsw"), all.y = TRUE, all.x = TRUE)
+  cmesoall <- cmesoall[,!(names(cmesoall) %in% c("core.x", "crypt.x"))]
+  names(cmesoall)[names(cmesoall) %in% c("core.y", "crypt.y")] <- c("core", "crypt")
   
   #fill-in missing station entries
   stationmiss <- cmesoall[is.na(cmesoall$station),]
+  if(nrow(stationmiss) > 0){
   stationmiss$station <- paste0("C", stationmiss$crypt, "C", stationmiss$core)
   if(length(stationmiss[is.na(stationmiss$core),]$station) > 0){
     stationmiss[is.na(stationmiss$core),]$station <- paste0("C", stationmiss[is.na(stationmiss$core),]$crypt)
   }
   
   cmesoall[is.na(cmesoall$station),]$station <- stationmiss$station 
+  }
   
   #cmesoall <- cmesoall[with(cmesoall, order(crypt, pwsw, date, core)),]
 

@@ -112,14 +112,12 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
   
-  #browser()
-  
   #return p-numbers associated with both samples and field duplicates
-  align_fd_pnumbers <- function(x, dt){
+  id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
   
+  align_fd_pnumbers <- function(x, dt, id_info_dt){
     id_info <- paste0(paste0(x[c("matrix", "location")], collapse = ""), as.POSIXct(x["collect_date"]), collapse = "")
-    id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
-    
+  
     fd_samp_dt <- dt[which(id_info_dt %in% id_info),]
     if(length(unique(fd_samp_dt$cust_sample_id)) > 1 & nchar(x["cust_sample_id"]) < 10){
       paste0(unique(fd_samp_dt$cust_sample_id), collapse = "_")
@@ -128,14 +126,11 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
     }
   }
   
-  dt$cust_sample_id <- apply(dt, 1, function(x) align_fd_pnumbers(x, dt))
+  dt$cust_sample_id <- apply(dt, 1, function(x) align_fd_pnumbers(x, dt, id_info_dt))
   
   dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
   
-  #dt[duplicated(cbind(dt$collect_date, dt$location, dt$matrix)),]
-  
   #add calculated fields==============================================#
-  
   dt$crypt[substring(dt$location, 1, 1) == "C"] <- substring(dt$location, 2, 2)[substring(dt$location, 1, 1) == "C"]
   dt$core <- sapply(dt$location, function(x) substring(x, 4, nchar(x)))
   
@@ -147,6 +142,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
                     4 amb
                     5 elev
                     6 amb
+                    NA NA
                     ")
   
   if(project == "soilplant"){
@@ -208,9 +204,10 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   names(swkey)<-c("crypt","trt")
   names(key)<-c("core","trt")
   
+  #created padded dt for head and mixing tanks?
+  
   dt <- rbind(merge(dt[dt$matrix == "PW",], key), merge(dt[dt$matrix == "SW",], swkey))
   dt$trt[c(grep("H", dt$location), grep("M", dt$location))] <- NA
-  
   dt$core <- as.numeric(dt$core)
   
   #fix column names===================================================#
@@ -230,7 +227,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
 
   #merge sulfide by approximating to the nearest wq date===============#
   sulfide <- clean_sulfide(sulfpath = sulfpath)$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
-#browser()
+
   align_sulfide_dates <- function(x, dates = dt$date){
     if(any(abs(difftime(x, dates)) < 12)){
       dates[which.min(abs(difftime(x, dates)))]
