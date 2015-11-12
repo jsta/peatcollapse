@@ -82,28 +82,67 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
 #'@param ppath character folder.path to folder containing phosphorus data
 #'@param sulfpath character folder.path to folder containing sulfide data
 #'@param tofile logical print results to file?
+#'@details TODO: WHY ARE THERE NA LOCATIONS AT THE END OF assemble_field?!!
 #'@export
 #'@examples \dontrun{
 #'field <- assemble_field(tofile = TRUE)
 #'}
 assemble_field <- function(onsitepath = file.path("Raw", "onsite"), eddpath = file.path("Raw", "lab", "EDD") , limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus") , sulfpath = file.path("Raw", "lab"), tofile = TRUE){
+
+  #browser()
   
   fieldonsite <- get_fieldonsite(onsitepath = onsitepath)
   fieldlab <- get_fieldlab(fieldonsite = fieldonsite, eddpath = eddpath, limspath = limspath, ppath = ppath, sulfpath = sulfpath, addlims = TRUE)
   names(fieldlab)[names(fieldlab) == "matrix"] <- "pwsw"
   
-  align_dates <- function(x, dates = fieldonsite$collect_date){
-    dates[which.min(abs(difftime(x, dates)))]
+  align_dates <- function(x, fieldonsite){
+    dates <- fieldonsite[fieldonsite$site %in% x["site"], "collect_date"]
+    diff_dates <- abs(difftime(x["collect_date"], dates))
+    dates <- data.frame(dates = dates, diff_dates = diff_dates)
+    dates <- dates[order(dates$diff_dates),]
+    dates[1,1]
   }
   
-  fieldlab$collect_date <- do.call(c, mapply(align_dates, fieldlab$collect_date, SIMPLIFY = FALSE))
+  fieldlab$collect_date <- strftime(as.POSIXct(apply(fieldlab, 1, function(x) align_dates(x, fieldonsite =  fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
+
+  #==================================================================#
+  s199_fieldlab <- fieldlab[fieldlab$site == "S-199",]
+  fieldlab <- fieldlab[fieldlab$site != "S-199",]
   
-  cfieldall <- merge(fieldonsite, fieldlab, by=c("site", "chamber", "collect_date", "pwsw", "inout", "location"), all.y = TRUE, all.x = TRUE)
+  c_s199_pnumbers <- function(x, s199_fieldlab){
+    if(nchar(x["cust_sample_id"]) < 20 & nrow(s199_fieldlab[s199_fieldlab$collect_date %in% x["collect_date"],]) > 1){
+      s199_fieldlab_sub <- s199_fieldlab[s199_fieldlab$collect_date %in% x["collect_date"][1],]
+      paste(unique(s199_fieldlab_sub$cust_sample_id), collapse = "_")
+    }else{
+      x["cust_sample_id"]
+    }
+  }
+  
+  s199_fieldlab$cust_sample_id <- apply(s199_fieldlab, 1, function(x) c_s199_pnumbers(x, s199_fieldlab))
+  
+  
+  
+  s199_fieldlab <- suppressWarnings(aggregate(s199_fieldlab[,8:25], by = list(s199_fieldlab$site, s199_fieldlab$collect_date, s199_fieldlab$pwsw, s199_fieldlab$location, s199_fieldlab$cust_sample_id), mean))
+  names(s199_fieldlab)[1:5] <- c("site", "collect_date", "pwsw", "location", "cust_sample_id")
+  
+  #browser()
+  
+  padna_names <- c(names(fieldlab)[!(names(fieldlab) %in% names(s199_fieldlab))])
+  padna <- data.frame(matrix(NA,nrow = nrow(s199_fieldlab), ncol = length(padna_names)))
+  names(padna) <- padna_names
+  s199_fieldlab <- cbind(s199_fieldlab, padna)
+  s199_fieldlab <- s199_fieldlab[,match(names(s199_fieldlab), names(fieldlab))]
+  fieldlab <- rbind(fieldlab, s199_fieldlab)
+  #==================================================================#
+  
+  #fieldlab$collect_date <- do.call(c, mapply(function(x) align_dates(x, fieldonsite = fieldonsite), fieldlab$collect_date, SIMPLIFY = FALSE))
+  
+  cfieldall <- merge(fieldonsite, fieldlab, by = c("site", "chamber", "collect_date", "pwsw", "inout", "location"), all.y = TRUE, all.x = TRUE)
   cfieldall <- cfieldall[order(cfieldall$inout, cfieldall$site, cfieldall$pwsw, cfieldall$collect_date, cfieldall$chamber),]
   
-  cfieldall[cfieldall$chamber > 9 & cfieldall$site == "BW", "trt"] <- "treatment"
-  cfieldall[cfieldall$chamber > 10 & cfieldall$site == "FW", "trt"] <- "treatment"
-  cfieldall[is.na(cfieldall$trt), "trt"] <- "control"
+  cfieldall[!is.na(cfieldall$chamber) & cfieldall$chamber > 9 & cfieldall$site == "BW" & cfieldall$site != "S-199", "trt"] <- "treatment"
+  cfieldall[!is.na(cfieldall$chamber) & cfieldall$chamber > 10 & cfieldall$site == "FW" & cfieldall$site != "S-199", "trt"] <- "treatment"
+  cfieldall[is.na(cfieldall$trt) & cfieldall$site != "S-199", "trt"] <- "control"
   
   #remove rows and columns of na
   cfieldall <- cfieldall[,apply(cfieldall, 2, function(x) sum(!is.na(x))) > 1]
@@ -122,7 +161,10 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
   
   names(cfieldall)[!is.na(match(names(cfieldall), unitkey[,1]))]
   names(cfieldall)[names(cfieldall) %in% unitkey[,1]] <- unitkey[na.omit(match(names(cfieldall), unitkey[,1])), 2] 
-   
+
+  #WHY ARE THERE NA LOCATIONS??!!!
+  #browser()
+  #cfieldall <- cfieldall[!is.na(cfieldall$location),]   
 #==================================================================#
   #print(paste(nrow(cfieldall), "rows output"))
   if(tofile == TRUE){

@@ -15,4 +15,9 @@ get_mesoonsite(onsitepath = file.path("Raw", "onsite"),
 \description{
 Get mesocosm onsite data
 }
+\examples{
+\dontrun{
+mesoonsite <- get_mesoonsite(onsitepath = file.path("Raw", "onsite"), experiment = "SoilPlant")
+}
+}
 

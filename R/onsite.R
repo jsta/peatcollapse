@@ -104,8 +104,6 @@ get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
   bwpath <- flist[grep(tolower("BrackishWFieldData"), tolower(flist))]
   bwpath <- bwpath[which.max(as.numeric(substring(unlist(lapply(strsplit(bwpath,"/"), function(x) unlist(x[3]))), 1, 8)))]
   
-  #browser()
-    
   cfieldonsite<-function(sumpathlist, pwsw="all"){
       full<-list()
       
@@ -114,39 +112,57 @@ get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
         names(dt) <- tolower(names(dt))
         
         if(any(names(dt) == "timing.of.sample.with.dosing")){
-          dt <- dt[dt$timing.of.sample.with.dosing == "1 day post"|dt$timing.of.sample.with.dosing=="",]
-          dt<-dt[,-which(names(dt)=="timing.of.sample.with.dosing")]
+          dt <- dt[dt$timing.of.sample.with.dosing == "1 day post"|dt$timing.of.sample.with.dosing == "",]
+          dt <- dt[,-which(names(dt) == "timing.of.sample.with.dosing")]
         }
         
-        dt<-dt[nchar(as.character(dt$chamber))<3,]
-        names(dt)[c(1,4,5)]<-c("date","pwsw","trt")
+        #dt <- dt[nchar(as.character(dt$chamber)) < 3,]
+        names(dt)[c(1,4,5)] <- c("date", "pwsw", "trt")
         
-        if(mean(nchar(dt$date))<8){
+        if(mean(nchar(dt$date)) < 8){
           dt$date <- sapply(dt$date, mdy2mmyyyy)
         }
+        dt$date <- as.POSIXct(strptime(dt$date, "%m/%d/%Y"))
         
-        dt$date<-as.POSIXct(strptime(dt$date,"%m/%d/%Y"))
-        if(pwsw=="pw"){
-          dt<-dt[dt$pwsw=="PW",]
+        #==========================================================#
+        if(pwsw == "pw"){
+          dt <- dt[dt$pwsw == "PW",]
         }
-        if(pwsw=="sw"){
-          dt<-dt[dt$pwsw=="SW",]
+        if(pwsw == "sw"){
+          dt<-dt[dt$pwsw == "SW",]
         }
-        suppressWarnings(dt[,11:14]<-apply(dt[,11:14],2,function(x) as.numeric(x)))
-        suppressWarnings(dt[,"chamber"]<-sapply(dt[,"chamber"],function(x) as.numeric(x)))
+        #==========================================================#
+
+        suppressWarnings(dt[,11:14] <- apply(dt[,11:14], 2, function(x) as.numeric(x)))
+        
+        dt$site <- paste(substring(sumpathlist[i], 36, 36), "W", sep = "")
+        dt[dt$chamber == "S-199", "site"] <- "S-199"
+        suppressWarnings(dt[,"chamber"] <- sapply(dt[,"chamber"], function(x) as.numeric(x)))
         
         dt$inout <- NA
         dt[dt$sipper < 3, "inout"] <- "out"
         dt[dt$sipper >= 3, "inout"] <- "in"
         
-        dtagg<-aggregate(dt[,11:14],by=list(dt$date,dt$chamber,dt$pwsw,dt$inout),function(x) mean(x,na.rm=T))
-        #dtagg<-aggregate(dt,list(dt$date,dt$chamber,dt$pwsw),function(x) mean(x,na.rm=T))
-        names(dtagg)[1:4]<-c("date","chamber","pwsw","inout")
-        names(dtagg)<-tolower(names(dtagg))
-        dtagg[,5:ncol(dtagg)] <- round(dtagg[,5:ncol(dtagg)], 3)
+        dtagg <- aggregate(dt[,11:14], by = list(dt$date, dt$chamber, dt$pwsw, dt$inout, dt$site), function(x) mean(x, na.rm = T))
+        names(dtagg)[1:5]<-c("date", "chamber", "pwsw", "inout", "site")
         
-        dtagg<-dtagg[order(dtagg$inout,dtagg$date),]
-        dtagg$site<-paste(substring(sumpathlist[i],36,36),"W",sep="")
+        if(any(!is.na(unlist(dt[dt$site == "S-199",11:14])))){ 
+          s199agg <- aggregate(dt[dt$site == "S-199",11:14], by = list(dt[dt$site == "S-199", "date"], dt[dt$site == "S-199", "pwsw"], dt[dt$site == "S-199", "site"]), function(x) mean(x, na.rm = T))
+          names(s199agg)[1:3] <- c("date", "pwsw", "site")
+          
+          s199agg_pad <- data.frame(matrix(NA, nrow = nrow(s199agg), ncol = 2))
+          names(s199agg_pad) <- c("inout", "chamber")
+          s199agg <- cbind(s199agg, s199agg_pad)
+          
+          s199agg <- s199agg[,match(names(dtagg), names(s199agg))]
+          dtagg <- rbind(dtagg, s199agg)
+        }
+        
+        names(dtagg)<-tolower(names(dtagg))
+        dtagg[,6:ncol(dtagg)] <- round(dtagg[,6:ncol(dtagg)], 3)
+        
+        dtagg <- dtagg[order(dtagg$inout, dtagg$date, dtagg$site),]
+        #dtagg$site<-paste(substring(sumpathlist[i],36,36),"W",sep="")
         full[[i]]<-dtagg    
       }
       do.call(rbind,full)
@@ -157,7 +173,16 @@ get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
   
   dt <- rbind(fw, bw)
   names(dt)[names(dt) == "date"] <- "collect_date"
-  dt$location <- paste(dt$site, substring(dt$pwsw, 1, 1), dt$chamber, sep = "-")
-
+  
+  construct_location <-function(x){
+    if(x["site"] == "S-199"){
+      x["site"]  
+    }else{
+      gsub(" ", "", paste(x["site"], substring(x["pwsw"], 1, 1), x["chamber"], sep = "-"))
+    }
+  }
+  
+  dt$location <- apply(dt, 1, function(x) construct_location(x))
+  
   dt
 }

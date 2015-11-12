@@ -77,6 +77,7 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
   #split meso and field into sql tables===============================#
   mesolocations <- c(unique(dt$location[grep("C", dt$location)]), unique(dt$location[grep("H", dt$location)]), unique(dt$location[grep("M", dt$location)]))
   fieldlocations <- unique(dt$location)[!(unique(dt$location) %in% mesolocations)]
+  fieldlocations <- fieldlocations[!is.na(fieldlocations)]
   
   meso <- dt[dt$location %in% mesolocations,]
   field <- dt[dt$location %in% fieldlocations,]
@@ -270,28 +271,58 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
   
-  #==================================================================#
-  align_dates <- function(x, dates = fieldonsite$collect_date){
-    dates[which.min(abs(difftime(x, dates)))]
+  #browser()
+  
+  #return p-numbers associated with both samples and field duplicates
+  id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
+  
+  align_fd_pnumbers <- function(x, dt, id_info_dt){
+    id_info <- paste0(paste0(x[c("matrix", "location")], collapse = ""), as.POSIXct(x["collect_date"]), collapse = "")
+    
+    fd_samp_dt <- dt[which(id_info_dt %in% id_info),]
+    if(length(unique(fd_samp_dt$cust_sample_id)) > 1 & nchar(x["cust_sample_id"]) < 10){
+      paste0(unique(fd_samp_dt$cust_sample_id), collapse = "_")
+    }else{
+      x["cust_sample_id"]
+    }
   }
   
-  dt$collect_date <- do.call(c, mapply(align_dates, dt$collect_date, SIMPLIFY = FALSE))
+  dt$cust_sample_id <- apply(dt, 1, function(x) align_fd_pnumbers(x, dt, id_info_dt))
+  
+  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
 
   #==================================================================#
-  dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
-  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
-  dt$trt <- NA
+  align_dates <- function(x, fieldonsite){
+    if(x["site"] == "S"){
+      #browser()
+      as.POSIXct(x["collect_date"], origin = "1970-01-01", tz = "EST")
+    }else{
+      dates <- fieldonsite[fieldonsite$site == x["site"], "collect_date"]
+      dates[which.min(abs(difftime(x["collect_date"], dates)))]
+    }
+  }
   
-  dt$chamber <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,3])
-  dt <- dt[nchar(dt$chamber) < 3,]
+  dt$collect_date <- strftime(as.POSIXct(apply(dt, 1, function(x) align_dates(x, fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
+  
+  #==================================================================#
+  dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
+  
+  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
   
   #dt[nchar(dt$chamber) == 3,] #these are S-199 samples
+  dt[dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199", "site"] <- "S-199"
+  dt[dt$site == "S-199", "location"] <- "S-199"
+  dt[dt$location == "S-199", "chamber"] <- 199
+  dt$trt <- NA
+  
+  dt[is.na(dt$chamber), "chamber"] <- suppressWarnings(do.call(rbind, strsplit(dt[is.na(dt$chamber), "location"], "-"))[,3])
+  dt <- dt[nchar(dt$chamber) <= 3,]
   
   dt$chamber <- suppressWarnings(as.numeric(as.character(dt$chamber)))
-  dt[dt$chamber > 9 & dt$site == "BW", "trt"] <- "treatment"
-  dt[is.na(dt$trt), "trt"] <- "control"  
-  dt[dt$chamber > 10 & dt$site == "FW", "trt"] <- "treatment"
-  dt[is.na(dt$trt), "trt"] <- "control"
+  dt[dt$chamber > 9 & dt$site == "BW" & dt$chamber < 199, "trt"] <- "treatment"
+  dt[is.na(dt$trt) & dt$chamber != 199, "trt"] <- "control"  
+  dt[dt$chamber > 10 & dt$site == "FW" & dt$chamber < 199, "trt"] <- "treatment"
+  dt[is.na(dt$trt) & dt$chamber != 199, "trt"] <- "control"
   
   dt <- dt[-(grep("GT", dt$location)),]
   
@@ -302,29 +333,39 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
     names(lims)[names(lims) %in% c("date", "station", "pwsw", "sample_id")] <- c("collect_date", "location", "cust_sample_id", "matrix")
     lims <- align_dfcol(target = lims, template = dt)
    
-    align_dates <- function(x, dates = fieldonsite$collect_date){
-      dates[which.min(abs(difftime(x, dates)))]
-    }
-    lims$collect_date <- do.call(c, mapply(align_dates, lims$collect_date, SIMPLIFY = FALSE))
+#     align_dates <- function(x, dates = fieldonsite$collect_date){
+#       dates[which.min(abs(difftime(x, dates)))]
+#     }
+#     lims$collect_date <- do.call(c, mapply(align_dates, lims$collect_date, SIMPLIFY = FALSE))
+    
+    lims$collect_date <- strftime(as.POSIXct(apply(lims, 1, function(x) align_dates(x, fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
+    
+    #dt[dt$site == "FW" & dt$chamber == 8 & dt$collect_date == "2015-08-20",]
+    #lims[lims$site == "FW" & lims$chamber == 8 & lims$collect_date == "2015-08-20",]
     
     dt <- rbind(lims, dt)
-    dt <- dt[!duplicated(paste(dt$acode, dt$collect_date, dt$sample_type, dt$location, dt$matrix), fromLast = TRUE),]
+    
+    #dt <- dt[!duplicated(paste(dt$acode, dt$collect_date, dt$sample_type, dt$location, dt$matrix), fromLast = TRUE),]
+    dt <- dt[!duplicated(paste(dt$site, dt$chamber, dt$collect_date, dt$matrix), fromLast = TRUE),]
   }
+  
+  #browser()
+  #dt[strftime(dt$collect_date, format = "%Y-%m") == "2014-10" & dt$matrix == "SW" & dt$location == "FW-S-1",]
+  
   dt$inout <- "in"
+  dt[(dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199") & !is.na(dt$location), "inout"] <- NA
+  dt[dt$chamber == 199, "chamber"] <- NA
 
+  #browser()
+  
 #merge phosphorus======================================================#
   phosdt <- clean_p(ppath = ppath)
   dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
-  
-#   phosdt[phosdt$collect_date == "2015-04-15" & phosdt$site == "BW" & phosdt$matrix == "PW" & phosdt$chamber == "16",]
-#   
-#   dt[dt$collect_date == "2015-04-15" & dt$site == "BW" & dt$matrix == "PW" & dt$chamber == "16",]
-#   
-#   test[test$collect_date == "2015-04-15" & test$site == "BW" & test$matrix == "PW" & test$chamber == "16",]
-#
 
 #merge sulfide=========================================================#
   #merge sulfide by approximating to the nearest wq date===============#
+  #browser()
+  
   sulfide <- clean_sulfide(sulfpath = sulfpath)$fielddt
 
   align_sulfide_dates <- function(x, df = dt){
@@ -339,11 +380,13 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   }
   
   sulfide$collect_date <- strftime(as.POSIXct(apply(sulfide, 1, function(x) align_sulfide_dates(x)), origin = "1970-01-01", tz = "EST"), format = "%Y-%m-%d")
+  sulfide <- sulfide[!is.na(sulfide$collect_date),]
     
   sulfide$inout <- "in"
   sulfide$matrix <- "PW"
 
   dt <- merge(dt, sulfide, by = c("site", "chamber", "collect_date", "matrix", "inout"), all.x = TRUE)
+  dt <- dt[order(dt$site, dt$inout, dt$matrix, dt$collect_date),]
 
   return(dt)
 }
@@ -527,10 +570,10 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
     dt1 <- dt1[dt1$SAMPLE_TYPE == "SAMP" | dt1$SAMPLE_TYPE == "FD",][,c(1, 3, 4, 8, 19, 21, 22)]
     
     if(pwsw=="sw"){
-      dt1<-dt1[dt1$MATRIX=="SW",]
+      dt1 <- dt1[dt1$MATRIX == "SW",]
     }
-    if(pwsw=="pw"){
-      dt1<-dt1[dt1$MATRIX=="PW",]
+    if(pwsw == "pw"){
+      dt1 <- dt1[dt1$MATRIX == "PW",]
     }
     
     names(dt1) <- tolower(names(dt1))
@@ -554,12 +597,6 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
     
     dwide <- reshape2::dcast(dt1, date + station + pwsw + sample_id ~ test_name, value.var="value", fun.aggregate = mean)
     
-    #test<-paste(dt1[,"date"],dt1[,"station"],dt1[,"pwsw"])
-    #dt1[which(paste(dt1[,"date"],dt1[,"station"],dt1[,"pwsw"])==test[1]),]
-    #dwide[which(paste(dwide[,"date"],dwide[,"station"],dwide[,"pwsw"])==test[1]),]
-    
-    #choose project
-    #proj="field"
     statsplit <- strsplit(dwide$station,"-")
     dwide$date <- as.POSIXct(strptime(dwide$date, "%m/%d/%Y"))
     ###########################################################  
@@ -570,91 +607,95 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
       dproj$site <- do.call(rbind,strsplit(dproj$station,"-"))[,1]
       dproj$chamber <- do.call(rbind,strsplit(dproj$station,"-"))[,3]
       dproj$trt<-NA
-      dproj<-dproj[nchar(dproj$chamber)<3,]
-      dproj$chamber<-as.numeric(as.character(dproj$chamber))
+      
+      dproj <- dproj[nchar(dproj$chamber) <= 3,]
+      dproj$chamber <- as.numeric(as.character(dproj$chamber))
+      dproj[dproj$station == "BW-S-199" | dproj$station == "FW-S-199", "station"] <- NA
+
       if(any(dproj$site=="BW")){
-        dproj[dproj$chamber>9&dproj$site=="BW","trt"]<-"treatment"
-        dproj[is.na(dproj$trt),"trt"]<-"control"  
+        dproj[dproj$chamber > 9 & dproj$site == "BW" & dproj$chamber < 199, "trt"] <- "treatment"
+        dproj[is.na(dproj$trt) & dproj$chamber != "199", "trt"] <- "control"  
       }
-      if(any(dproj$site=="FW")){
-        dproj[dproj$chamber>10&dproj$site=="FW","trt"]<-"treatment"
-        dproj[is.na(dproj$trt),"trt"]<-"control"  
+      if(any(dproj$site == "FW")){
+        dproj[dproj$chamber > 10 & dproj$site == "FW" & dproj$chamber < 199, "trt"] <- "treatment"
+        dproj[is.na(dproj$trt) & dproj$chamber != "199","trt"] <- "control"  
       }
       
-      namestemp <- c("date","station","sample_id","pwsw","ALKA","CL","DOC","LCOND","LPH","NH4","NOX","Salinity","SO4","TDN","TN","site","chamber","trt")
+      namestemp <- c("date", "station", "sample_id", "pwsw", "ALKA", "CL", "DOC", "LCOND", "LPH", "NH4", "NOX", "Salinity", "SO4", "TDN", "TN", "site", "chamber", "trt")
       namesmiss <- which(is.na(match(namestemp, names(dproj))))
       paddt <- data.frame(matrix(NA, ncol = length(namestemp[namesmiss]), nrow = nrow(dproj)))
       names(paddt) <- namestemp[namesmiss]
       dproj <- cbind(dproj, paddt)
       dproj <- dproj[,match(namestemp, names(dproj))]
       
-      fulldt[[which(j==sumpathlist)]]<-dproj
+      fulldt[[which(j == sumpathlist)]] <- dproj
     }
     ###################################################  
-    if(proj=="meso"){
+    if(proj == "meso"){
       dprojsw<-dwide[nchar(dwide$station)==2&substring(dwide$station,1,1)=="C",]
       dproj<-dwide[nchar(dwide$station)<=5&nchar(dwide$station)>=4,]
-      dproj<-dproj[dproj$station!="S-199",]
+      #dproj<-dproj[dproj$station!="S-199",]
       dprojsw$site<-substring(dprojsw$station,2,2) #site = crypt
       dproj$site<-substring(dproj$station,2,2) #site = crypt
       dproj$chamber<-sapply(dproj$station,function(x) substring(x,4,nchar(x))) #chamber = core number
       
-      #load treatment keys
-      #     #plants plus soil
-      #     key<-read.table(header=FALSE,text="
-      #                     1 elevcont                    
-      #                     3 elevcont
-      #                     10 elevinun
-      #                     12 elevinun
-      #                     17 elevcont
-      #                     19 elevcont
-      #                     2 elevinun
-      #                     4 elevinun
-      #                     9 elevcont
-      #                     11 elevcont
-      #                     18 elevinun
-      #                     20 elevinun
-      #                     6 ambcont
-      #                     8 ambcont
-      #                     14 ambcont
-      #                     16 ambcont
-      #                     22 ambinun
-      #                     24 ambinun
-      #                     5 ambinun
-      #                     7 ambinun
-      #                     13 ambinun
-      #                     15 ambinun
-      #                     21 ambcont
-      #                     23 ambcont
-      #                     ")
+#      load treatment keys
+          #plants plus soil
+          warning("Assuming that the meso experiment is plants plus soil...")
+          key<-read.table(header=FALSE,text="
+                          1 elevcont                    
+                          3 elevcont
+                          10 elevinun
+                          12 elevinun
+                          17 elevcont
+                          19 elevcont
+                          2 elevinun
+                          4 elevinun
+                          9 elevcont
+                          11 elevcont
+                          18 elevinun
+                          20 elevinun
+                          6 ambcont
+                          8 ambcont
+                          14 ambcont
+                          16 ambcont
+                          22 ambinun
+                          24 ambinun
+                          5 ambinun
+                          7 ambinun
+                          13 ambinun
+                          15 ambinun
+                          21 ambcont
+                          23 ambcont
+                          ")
       
       #soil only
-      key<-read.table(header=FALSE,text="
-                      1 elevcont                    
-                      3 elevcont
-                      10 elevinun
-                      12 elevinun
-                      17 elevcont
-                      19 elevcont
-                      2 elevinun
-                      4 elevinun
-                      9 elevcont
-                      11 elevcont
-                      18 elevinun
-                      20 elevinun
-                      6 ambcont
-                      8 ambcont
-                      14 ambcont
-                      16 ambcont
-                      22 ambinun
-                      24 ambinun
-                      5 ambinun
-                      7 ambinun
-                      13 ambinun
-                      15 ambinun
-                      21 ambcont
-                      23 ambcont
-                      ")
+#       key<-read.table(header=FALSE,text="
+#                       1 elevcont                    
+#                       3 elevcont
+#                       10 elevinun
+#                       12 elevinun
+#                       17 elevcont
+#                       19 elevcont
+#                       2 elevinun
+#                       4 elevinun
+#                       9 elevcont
+#                       11 elevcont
+#                       18 elevinun
+#                       20 elevinun
+#                       6 ambcont
+#                       8 ambcont
+#                       14 ambcont
+#                       16 ambcont
+#                       22 ambinun
+#                       24 ambinun
+#                       5 ambinun
+#                       7 ambinun
+#                       13 ambinun
+#                       15 ambinun
+#                       21 ambcont
+#                       23 ambcont
+#                       ")
       
       #swkey is the same for both meso experiments
       swkey<-read.table(header=FALSE,text="
@@ -681,7 +722,6 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
       sw<-merge(swkey,dprojsw)
       sw$chamber<-NA
       
-      #pwsave<-pw
       pw<-pw[,match(names(pw),names(sw))]
       
       dproj<-rbind(pw,sw)
@@ -693,9 +733,7 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
         dproj<-cbind(dproj,paddt)
       }
       
-      #savedproj<-dproj
-      #dproj<-savedproj
-      dproj<-aggregate(cbind(ALKA,CL,DOC,NH4,NOX,Salinity,SO4,TDN) ~ date + station + pwsw + site + chamber + trt,FUN=mean,data=dproj,na.action=na.pass)
+      dproj <- aggregate(cbind(ALKA,CL,DOC,NH4,NOX,Salinity,SO4,TDN) ~ date + station + pwsw + site + chamber + trt,FUN=mean,data=dproj,na.action=na.pass)
       names(dproj)<-c("date","station","pwsw","site","chamber","trt","ALKA","CL","DOC","NH4","NOX","Salinity","SO4","TDN")
       
       
