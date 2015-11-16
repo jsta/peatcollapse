@@ -68,6 +68,13 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
   q <- paste("SELECT matrix, location, sample_type, collect_date, acode, result, result_units_desc, mdl_final, cust_sample_id FROM", tablename, "WHERE sample_type LIKE 'SAMP' OR sample_type LIKE 'FD'")
   dt <- RSQLite::dbGetQuery(eddlab, q)
   
+  #remove one-off samplings
+  #browser()
+  dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-13" & dt$location != "S-199"),] #April 2015 pre-dose sampling retain S-199
+  dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-15" & dt$location == "S-199"),] #April 2015 FW S-199
+  
+  #adjust specific dates
+  
   #remove mdl flags from result field=================================#
   dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))] <- sapply(dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))], function(x) substring(x, 1, nchar(x)-1))
   dt$result <- as.numeric(dt$result)
@@ -254,6 +261,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
 #'@param ppath character folder.path to folder containing phosphorus data
 #'@param sulfpath character folder.path to folder containing sulfide data
 #'@param addlims logical integrate lims data with edd data?
+#'@detail WHEN DID APRIL BW (AND FW) SAMPLING TAKE PLACE 4-13 OR 4-15?
 #'@export
 #'@examples
 #'\dontrun{
@@ -271,7 +279,53 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
   
+   browser()
+#   dt[dt$cust_sample_id == "P76949-17",]
+  
+#   dt[dt$collect_date == "2015-04-15",]
+#   which(dt$cust_sample_id == "P77868-13")
+  
+  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
+  dt[dt$site == "S", "site"] <- "S-199"
+  dt[dt$location == "S-199" | dt$location == "FW-S-199" | dt$location == "BW-S-199", "site"] <- "S-199"
+  
+  #dt[dt$collect_date == "2015-08-19" & dt$location == "BW-S-199",]
+  
+  find_s199site <- function(x, dt){
+    #browser()
+    dt[which.min(abs(difftime(as.POSIXct(unlist(x["collect_date"]), origin = "1970-01-01", tz = "NewYork"), dt$collect_date))),]
+      result <- paste0(names(table(unlist(lapply(dt[x["collect_date"] == dt[,"collect_date"],]$location, function(x) strsplit(x, "-")[[1]][[1]]))))[1], "-", x["location"])
+      if(result == "S-S-199"){
+        "BW-S-199"
+      }else{
+        result
+      }
+  }
   #browser()
+  #find_s199site(dt[2168,], dt)#replace num with row of interest
+  #fieldlab[fieldlab$cust_sample_id == "P77867-13",]
+  
+  dt[dt$location == "S-199", "location"] <- apply(dt[dt$location == "S-199",], 1, function(x) find_s199site(x, dt)) 
+  
+  dt[dt$location == "FW-S-199", "site"] <- "FW"
+  dt[dt$location == "BW-S-199", "site"] <- "BW"
+  
+  #browser()
+  #max(dt[dt$location == "BW-S-199",]$collect_date)
+  
+  #==================================================================#
+  align_dates <- function(x, fieldonsite){
+    #if(x["site"] == "S-199"){
+    #  as.POSIXct(x["collect_date"], origin = "1970-01-01", tz = "EST")
+    #}else{
+      dates <- fieldonsite[fieldonsite$site == x["site"], "collect_date"]
+      dates[which.min(abs(difftime(x["collect_date"], dates)))]
+    # }
+  }
+  
+  #browser()
+  
+  dt$collect_date <- strftime(as.POSIXct(apply(dt, 1, function(x) align_dates(x, fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
   
   #return p-numbers associated with both samples and field duplicates
   id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
@@ -289,35 +343,35 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   
   dt$cust_sample_id <- apply(dt, 1, function(x) align_fd_pnumbers(x, dt, id_info_dt))
   
-  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
-
-  #==================================================================#
-  align_dates <- function(x, fieldonsite){
-    if(x["site"] == "S"){
-      #browser()
-      as.POSIXct(x["collect_date"], origin = "1970-01-01", tz = "EST")
-    }else{
-      dates <- fieldonsite[fieldonsite$site == x["site"], "collect_date"]
-      dates[which.min(abs(difftime(x["collect_date"], dates)))]
-    }
-  }
+  #max(dt[dt$location == "BW-S-199",]$collect_date)
   
-  dt$collect_date <- strftime(as.POSIXct(apply(dt, 1, function(x) align_dates(x, fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
+  dt[dt$location == "FW-S-199", "site"] <- "S-199"
+  dt[dt$location == "BW-S-199", "site"] <- "S-199"
+  
+  
+  #browser()
+  #WHY IS THE SITE ASSOCIATED WITH THE FOLLOWING FILTER TURNING UP AS FW?
+  #dt[dt$cust_sample_id == "P77336-16_P77336-17",] 
   
   #==================================================================#
-  dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id ~ acode,  value.var="result", fun.aggregate=mean)
+  dt <- reshape2::dcast(dt, collect_date + location + matrix + cust_sample_id + site ~ acode,  value.var = "result", fun.aggregate = mean)
   
-  dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
+  #browser()
+  #dt[dt$location == "BW-S-199" & dt$collect_date == "2015-02-11",]
+  
+  #dt$site <- suppressWarnings(do.call(rbind, strsplit(dt$location, "-"))[,1])
   
   #dt[nchar(dt$chamber) == 3,] #these are S-199 samples
-  dt[dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199", "site"] <- "S-199"
-  dt[dt$site == "S-199", "location"] <- "S-199"
-  dt[dt$location == "S-199", "chamber"] <- 199
+  
+  #dt[dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199", "site"] <- dt[dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199", "location"]
+  #dt[dt$site == "S-199", "location"] <- "S-199"
+  #dt[dt$location == "S-199", "chamber"] <- 199
+  
   dt$trt <- NA
   
+  dt$chamber <- NA
   dt[is.na(dt$chamber), "chamber"] <- suppressWarnings(do.call(rbind, strsplit(dt[is.na(dt$chamber), "location"], "-"))[,3])
-  dt <- dt[nchar(dt$chamber) <= 3,]
-  
+  #dt <- dt[nchar(dt$chamber) <= 3,]
   dt$chamber <- suppressWarnings(as.numeric(as.character(dt$chamber)))
   dt[dt$chamber > 9 & dt$site == "BW" & dt$chamber < 199, "trt"] <- "treatment"
   dt[is.na(dt$trt) & dt$chamber != 199, "trt"] <- "control"  
@@ -326,10 +380,11 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   
   dt <- dt[-(grep("GT", dt$location)),]
   
+  browser()
   if(addlims == TRUE){
     limspaths <- list.files(limspath, pattern = "csv", include.dirs = TRUE, full.names = TRUE)
     
-    lims <- cleanlab(limspaths)
+    lims <- clean_lims(limspaths)
     names(lims)[names(lims) %in% c("date", "station", "pwsw", "sample_id")] <- c("collect_date", "location", "cust_sample_id", "matrix")
     lims <- align_dfcol(target = lims, template = dt)
    
@@ -338,10 +393,17 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 #     }
 #     lims$collect_date <- do.call(c, mapply(align_dates, lims$collect_date, SIMPLIFY = FALSE))
     
+    
+    #lims[lims$site  == "S-199",]
+    
     lims$collect_date <- strftime(as.POSIXct(apply(lims, 1, function(x) align_dates(x, fieldonsite)), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
     
     #dt[dt$site == "FW" & dt$chamber == 8 & dt$collect_date == "2015-08-20",]
     #lims[lims$site == "FW" & lims$chamber == 8 & lims$collect_date == "2015-08-20",]
+    
+    
+#     dt[dt$location == "BW-S-199",]
+#     lims[lims$location == "BW-S-199",]
     
     dt <- rbind(lims, dt)
     
@@ -349,22 +411,22 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
     dt <- dt[!duplicated(paste(dt$site, dt$chamber, dt$collect_date, dt$matrix), fromLast = TRUE),]
   }
   
-  #browser()
+  browser()
+  dt[dt$cust_sample_id == "P77336-16_P77336-17",]
+  
   #dt[strftime(dt$collect_date, format = "%Y-%m") == "2014-10" & dt$matrix == "SW" & dt$location == "FW-S-1",]
   
   dt$inout <- "in"
   dt[(dt$location == "S-199" | dt$location == "BW-S-199" | dt$location == "FW-S-199") & !is.na(dt$location), "inout"] <- NA
   dt[dt$chamber == 199, "chamber"] <- NA
 
-  #browser()
-  
 #merge phosphorus======================================================#
   phosdt <- clean_p(ppath = ppath)
   dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
 
 #merge sulfide=========================================================#
   #merge sulfide by approximating to the nearest wq date===============#
-  #browser()
+  
   
   sulfide <- clean_sulfide(sulfpath = sulfpath)$fielddt
 
@@ -432,7 +494,7 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
       intdate <- (as.numeric(dtxlsx[daterow, 1]) - 1)  * 24 * 60 * 60
       date <- as.POSIXct(intdate, origin = "1900-01-01", tz = "America/New_York")
       
-      ab <- as.numeric(dtxlsx[(daterow-1):daterow, 2])
+      ab <- as.numeric(unlist(dtxlsx[(daterow-1):daterow, 2]))
       b <- ab[2]
       a <- ab[1]
       
@@ -552,14 +614,14 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   
 }
 
-#'@name cleanlab
+#'@name clean_lims
 #'@title Clean LIMS lab data files
 #'@param proj string options are field, fieldbw, fieldfw, and meso
 #'@param pwsw string choice of all, sw, pw
 #'@param sumpathlist list of file.paths to lims raw data files
 #'@import reshape2
 #'@details EBs are discarded, only meso data has FDs
-cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
+clean_lims <- function(sumpathlist, proj = "field", pwsw = "all"){
   
   fulldt <- list()
   
@@ -595,31 +657,56 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
     dt1$datetime<-as.POSIXct(strptime(dt1$datetime,"%m/%d/%Y %H:%M"))
     dt1$date<-strftime(dt1$datetime,"%m/%d/%Y")
     
+    #align fd p-numbers===================================================#
+    id_info_dt1 <- apply(dt1[,c("pwsw", "station", "date")], 1, function(x) paste0(x, collapse = ""))
+    
+    align_fd_pnumbers <- function(x, dt, id_info_dt){
+      
+      id_info <- paste0(paste0(x[c("pwsw", "station")], collapse = ""), x["date"], collapse = "")
+      
+      fd_samp_dt <- dt[which(id_info_dt %in% id_info),]
+      if(length(unique(fd_samp_dt$sample_id)) > 1 & nchar(x["sample_id"]) < 10){
+        paste0(unique(fd_samp_dt$sample_id), collapse = "_")
+      }else{
+        x["sample_id"]
+      }
+    }
+    
+    dt1$sample_id <- apply(dt1, 1, function(x) align_fd_pnumbers(x, dt1, id_info_dt1))
+    
+    
     dwide <- reshape2::dcast(dt1, date + station + pwsw + sample_id ~ test_name, value.var="value", fun.aggregate = mean)
     
     statsplit <- strsplit(dwide$station,"-")
     dwide$date <- as.POSIXct(strptime(dwide$date, "%m/%d/%Y"))
     ###########################################################  
-    if(proj=="field"){
+    if(proj == "field"){
       
-      dproj<-dwide[nchar(dwide$station)>5,]
+      dproj <- dwide[nchar(dwide$station) > 5,]
       
-      dproj$site <- do.call(rbind,strsplit(dproj$station,"-"))[,1]
+      dproj$site <- do.call(rbind, strsplit(dproj$station, "-"))[,1]
+      dproj[dproj$station == "BW-S-199", "site"] <- "S-199"
+      dproj[dproj$station == "FW-S-199", "site"] <- "S-199"
+      
       dproj$chamber <- do.call(rbind,strsplit(dproj$station,"-"))[,3]
       dproj$trt<-NA
       
       dproj <- dproj[nchar(dproj$chamber) <= 3,]
       dproj$chamber <- as.numeric(as.character(dproj$chamber))
-      dproj[dproj$station == "BW-S-199" | dproj$station == "FW-S-199", "station"] <- NA
-
-      if(any(dproj$site=="BW")){
+      
+      
+      
+      #station = location
+      #dproj[dproj$station == "BW-S-199" | dproj$station == "FW-S-199", "station"] <- NA
+      
+     if(any(dproj$site=="BW")){
         dproj[dproj$chamber > 9 & dproj$site == "BW" & dproj$chamber < 199, "trt"] <- "treatment"
         dproj[is.na(dproj$trt) & dproj$chamber != "199", "trt"] <- "control"  
       }
+      
       if(any(dproj$site == "FW")){
         dproj[dproj$chamber > 10 & dproj$site == "FW" & dproj$chamber < 199, "trt"] <- "treatment"
-        dproj[is.na(dproj$trt) & dproj$chamber != "199","trt"] <- "control"  
-      }
+        dproj[is.na(dproj$trt) & dproj$chamber != "199","trt"] <- "control"        }
       
       namestemp <- c("date", "station", "sample_id", "pwsw", "ALKA", "CL", "DOC", "LCOND", "LPH", "NH4", "NOX", "Salinity", "SO4", "TDN", "TN", "site", "chamber", "trt")
       namesmiss <- which(is.na(match(namestemp, names(dproj))))
@@ -632,8 +719,8 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
     }
     ###################################################  
     if(proj == "meso"){
-      dprojsw<-dwide[nchar(dwide$station)==2&substring(dwide$station,1,1)=="C",]
-      dproj<-dwide[nchar(dwide$station)<=5&nchar(dwide$station)>=4,]
+      dprojsw<-dwide[nchar(dwide$station) == 2 & substring(dwide$station, 1,1) == "C",]
+      dproj <- dwide[nchar(dwide$station) <= 5 & nchar(dwide$station) >= 4,]
       #dproj<-dproj[dproj$station!="S-199",]
       dprojsw$site<-substring(dprojsw$station,2,2) #site = crypt
       dproj$site<-substring(dproj$station,2,2) #site = crypt
@@ -724,7 +811,7 @@ cleanlab <- function(sumpathlist, proj = "field", pwsw = "all"){
       
       pw<-pw[,match(names(pw),names(sw))]
       
-      dproj<-rbind(pw,sw)
+      dproj<-rbind(pw, sw)
       
       fullvar<-c("date","station","pwsw","site","chamber","trt","ALKA","CL","DOC","NH4","NOX","Salinity","SO4","TDN")
       if(length(fullvar[is.na(match(fullvar,names(dproj)))])>0){
