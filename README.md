@@ -23,3 +23,12 @@ The `peatcollapse` `R` package is distributed via a .tar.gz (analagous to .zip) 
 install.packages(c("RSQLite", "readxl", "reshape2", "DBI"))
 install.packages("peatcollapse_0.1-1.zip", type = "win.binary", repos = NULL)
 ```
+
+## Assembling Databases
+
+```{r eval=FALSE}
+#From within peat-collapse data directory:
+field <- assemble_field(tofile = FALSE)
+
+meso <- assemble_mso(tofile = TRUE)
+```

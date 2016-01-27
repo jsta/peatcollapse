@@ -434,6 +434,7 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 
 #merge phosphorus======================================================#
   phosdt <- clean_p(ppath = ppath)
+  phosdt$collect_date <- as.character(phosdt$collect_date)
   #browser()
   dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
 
@@ -579,9 +580,9 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   flist <- list.files(ppath, full.names = TRUE, include.dirs = TRUE)
   sumpath <- flist[grep("labp", tolower(flist))]
   
-  dt1 <- read.csv(sumpath, stringsAsFactors=F)
-  names(dt1)<-tolower(names(dt1))
-  names(dt1)[3]<-"pwsw"
+  dt1 <- read.csv(sumpath, stringsAsFactors = F)
+  names(dt1) <- tolower(names(dt1))
+  names(dt1)[3] <- "pwsw"
   
   dt1 <- dt1[nchar(dt1[, "date"]) > 0,]
   dsplit <- matrix(unlist(strsplit(dt1$date,"/",fixed=T)),ncol=3,byrow=3)

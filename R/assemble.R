@@ -150,6 +150,7 @@ assemble_field <- function(onsitepath = file.path("Raw", "onsite"), eddpath = fi
   cfieldall[!is.na(cfieldall$chamber) & cfieldall$chamber > 10 & cfieldall$site == "FW" & cfieldall$site != "S-199", "trt"] <- "treatment"
   cfieldall[is.na(cfieldall$trt) & cfieldall$site != "S-199", "trt"] <- "control"
   
+  #browser()
   #remove rows and columns of na
   cfieldall <- cfieldall[,apply(cfieldall, 2, function(x) sum(!is.na(x))) > 1]
   cfieldall <- cfieldall[apply(cfieldall[,7:18], 1, function(x) sum(!is.na(x))) > 0,]
