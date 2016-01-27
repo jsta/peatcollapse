@@ -85,7 +85,7 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
   }
 }
 
-tsplot<-function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",inout="in",inclegend=TRUE,tofile=FALSE){
+tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",inout="in",inclegend=TRUE,tofile=FALSE){
   #dt<-cfieldall
   #params=names(cfieldall)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",tofile=FALSE,inout = "in",inclegend=FALSE))#timeseries
   parampos<-match(params,names(dt))
@@ -126,15 +126,15 @@ tsplot<-function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="f
     parampos<-parampos[-allna]
   }
   
-  library(zoo,quietly = TRUE,verbose = FALSE)
+  library(zoo, quietly = TRUE,verbose = FALSE)
   for(i in parampos){
     #i<-parampos[1]  
     #print(names(dt)[i])
     curdt<-dt[,c("collect_date","chamber","trt",names(dt)[i])]
     #ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
     ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
-    if(ylim[1]<0){
-      ylim[1]=0
+    if(ylim[1] < 0){
+      ylim[1] <- 0
     }
     
     means<-aggregate(curdt[,4],by=list(curdt$collect_date,curdt$trt),function(x) mean(x,na.rm=T))
@@ -144,7 +144,7 @@ tsplot<-function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="f
     #browser()
     if(tofile==TRUE){
       outname<-toupper(paste(bwfw,pwsw,"_",names(dt)[i],sep=""))
-      png(file.path("fig",paste(outname,".png",sep="")),width=537,height=401)
+      png(file.path(paste(outname,".png",sep = "")),width=537,height=401)
     }
     
     for(j in unique(means[,"trt"])){

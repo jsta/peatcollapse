@@ -26,9 +26,10 @@ install.packages("peatcollapse_0.1-1.zip", type = "win.binary", repos = NULL)
 
 ## Assembling Databases
 
+From within peat-collapse data directory:
+
 ```{r eval=FALSE}
-#From within peat-collapse data directory:
 field <- assemble_field(tofile = FALSE)
 
-meso <- assemble_mso(tofile = TRUE)
+meso <- assemble_meso(tofile = FALSE)
 ```
