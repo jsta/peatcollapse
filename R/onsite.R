@@ -25,7 +25,7 @@ get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment =
     
     for(i in 1:length(sumpathlist)){
       #i=1
-      dt<-read.csv(sumpathlist[i],skip=1,stringsAsFactors=F)
+      dt <- read.csv(sumpathlist[i], skip = 1, stringsAsFactors = F)
       names(dt)<-tolower(names(dt))
       
 #       if(any(names(dt)=="exp")){

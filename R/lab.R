@@ -2,7 +2,6 @@
 #'@title Create sqlite database of peatcollapse lab data
 #'@description Create sqlite database of peatcollapse lab data
 #'@import RSQLite
-#'@import jsta
 #'@param eddpath character file.path to edd data folder
 #'@param dbname character file name of output SQLite database
 #'@param tablename character name of internal database table
@@ -45,7 +44,7 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
   
   fullcentury <- gsub("/", "", sapply(edd$collect_date, function(x) strsplit(x, " ")[[1]][1]))
   fullcentury <- sapply(fullcentury, function(x) gsub("20", "", x))
-  edd$collect_date <- jsta::date456posix(fullcentury, century = 20)
+  edd$collect_date <- date456posix(fullcentury, century = 20)
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   invisible(RSQLite::dbWriteTable(conn = eddlab, name = tablename, value = edd, overwrite = TRUE))
