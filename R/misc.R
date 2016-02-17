@@ -1,6 +1,7 @@
 
 #'@name mesokey
 #'@title Key mesocosm treatment labels to an input data.frame
+#'@description Key mesocosm treatment labels to an input data.frame
 #'@param dt data.frame
 #'@export
 mesokey <- function(dt){
@@ -121,6 +122,7 @@ mdy2mmyyyy <- function(x){
 
 #'@name date456posix
 #'@title Convert numeric dates in mddyy to POSIXct
+#'@description Convert numeric dates in mddyy to POSIXct
 #'@param x numeric where the first 1-2 digits specify the month attribute because leading zeros have been stripped
 #'@param century numeric century recommended choice of "19" or "20"
 #'@export
@@ -161,6 +163,7 @@ date456posix <- function(x, century){
 
 #'@name align_dfcol
 #'@title Align a data.frame to a template
+#'@description Align a data.frame to a template
 #'@param template data.frame
 #'@param target data.frame
 #'@export

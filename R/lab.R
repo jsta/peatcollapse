@@ -1,6 +1,8 @@
 #'@name create_labdb
 #'@title Create sqlite database of peatcollapse lab data
+#'@description Create sqlite database of peatcollapse lab data
 #'@import RSQLite
+#'@import jsta
 #'@param eddpath character file.path to edd data folder
 #'@param dbname character file name of output SQLite database
 #'@param tablename character name of internal database table
@@ -52,6 +54,7 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
 
 #'@name clean_lab
 #'@title Clean lab data
+#'@description Clean lab data
 #'@import RSQLite
 #'@param begindate character date in YYYY-MM-DD format specifying a lower limit on the date of measurements to return
 #'@param dbname character file.path of edd database
@@ -102,6 +105,7 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 
 #'@name get_mesolab
 #'@title Get mesocosm lab data
+#'@description Get mesocosm lab data
 #'@import RSQLite
 #'@import reshape2
 #'@import DBI
@@ -261,17 +265,20 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
 
 #'@name get_fieldlab
 #'@title Get lab results from Field Study
+#'@description Get lab results from Field Study
 #'@param fieldonsite data.frame output of get_fieldonsite
 #'@param eddpath character folder.path to folder containing edd data
 #'@param limspath character folder.path to folder containing lims data
 #'@param ppath character folder.path to folder containing phosphorus data
 #'@param sulfpath character folder.path to folder containing sulfide data
 #'@param addlims logical integrate lims data with edd data?
-#'@detail WHEN DID APRIL BW (AND FW) SAMPLING TAKE PLACE 4-13 OR 4-15?
+#'@details WHEN DID APRIL BW (AND FW) SAMPLING TAKE PLACE 4-13 OR 4-15?
 #'@export
 #'@examples
 #'\dontrun{
-#'fieldlab <- get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"))
+#'fieldlab <- get_fieldlab(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"),
+#' limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"),
+#'  sulfpath = file.path("Raw", "lab"))
 #'}
 get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"), addlims = TRUE){
   
@@ -469,6 +476,7 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 
 #'@name clean_sulfide
 #'@title Clean sulfide data
+#'@description Clean sulfide data
 #'@export
 #'@import readxl
 #'@param sulfpath character file path to an .xlsx file
@@ -630,6 +638,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
 
 #'@name clean_lims
 #'@title Clean LIMS lab data files
+#'@description Clean LIMS lab data files
 #'@param proj string options are field, fieldbw, fieldfw, and meso
 #'@param pwsw string choice of all, sw, pw
 #'@param sumpathlist list of file.paths to lims raw data files

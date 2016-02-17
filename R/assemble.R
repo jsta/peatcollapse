@@ -1,5 +1,6 @@
 #'@name assemble_meso
 #'@title Assemble mesocosm data file from onsite and lab data
+#'@description Assemble mesocosm data file from onsite and lab data
 #'@param experiment character choice of "soilplant" or "soil"
 #'@param onsitepath character folder.path to folder containing onsite data
 #'@param sulfpath character folder.path to folder containing sulfide data
@@ -7,7 +8,8 @@
 #'@param tofile logical print results to file?
 #'@export
 #'@examples \dontrun{
-#'meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), tofile = FALSE)
+#'meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
+#' sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 #' }
 assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
  
@@ -76,6 +78,7 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
 
 #'@name assemble_field
 #'@title Assemble field data file from onsite and lab data
+#'@description Assemble field data file from onsite and lab data
 #'@param onsitepath character folder.path to folder containing onsite data
 #'@param eddpath character folder.path to folder containing edd data
 #'@param limspath character folder.path to folder containing lims data
@@ -86,7 +89,7 @@ TDN-TDN.mgl", sep = "-", stringsAsFactors = FALSE)
 #'         ANSWER:   BW-S-199 needs to be averaged with FW-S-199
 #'@export
 #'@examples \dontrun{
-#'field <- assemble_field(tofile = TRUE)
+#'field <- assemble_field(tofile = FALSE)
 #'}
 assemble_field <- function(onsitepath = file.path("Raw", "onsite"), eddpath = file.path("Raw", "lab", "EDD") , limspath = file.path("Raw", "lab"), ppath = file.path("Raw", "lab", "phosphorus") , sulfpath = file.path("Raw", "lab"), tofile = TRUE){
 

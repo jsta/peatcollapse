@@ -1,5 +1,6 @@
 #'@name get_mesoonsite
 #'@title Get mesocosm onsite data
+#'@description Get mesocosm onsite data
 #'@param experiment character choice of "soilplant" or "soil"
 #'@param onsitepath character file.path to onsite raw data
 #'@export
@@ -14,11 +15,11 @@ get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment =
     
     dtpath <- flist[which.max(as.numeric(substring(unlist(lapply(strsplit(flist,"/"), function(x) unlist(x[3]))), 1, 8)))]
     
-  #'@name cmesoonsite
-  #'@param sumpathlist list of file paths
-  #'@param pwsw return only pw, sw, or all?
-  #'@description Removes entries tagged in the "timing.of.sample.with.dosing" field of anything other than "1 day post"
-  cmesoonsite<-function(sumpathlist, pwsw = "all"){
+#name cmesoonsite
+#param sumpathlist list of file paths
+#param pwsw return only pw, sw, or all?
+#description Removes entries tagged in the "timing.of.sample.with.dosing" field of anything other than "1 day post"
+  cmesoonsite <- function(sumpathlist, pwsw = "all"){
     
     full<-list()
     
@@ -90,6 +91,7 @@ SW,2",sep=",", stringsAsFactors = FALSE)
 
 #'@name get_fieldonsite
 #'@title Get field onsite data
+#'@description Get field onsite data
 #'@param onsitepath character file.path to folder containing raw onsite data files
 #'@export
 #'@examples \dontrun{

@@ -1,8 +1,5 @@
-#'@name scplot
-#'@title scatter plot of peat collapse data
-#'@param rangecor provide a list of logical arguments to trim data outliers
-#'@param params provide a list of variables to plot. This list is parsed two at a time for scplot. Otherwise can be provided as a subset of data.frame names
-#'
+
+
 
 #plot label key
 labelkey<-read.table(text="
@@ -26,7 +23,15 @@ srp.ppb,SRP (ppb)
 tdp.ppb,TDP (ppb)
 mean.salinity,Lab Salinity",sep=",")
 
-scplot<-function(dt,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="all",pwsw="pw"){
+#'@name scplot
+#'@title scatter plot of peat collapse data
+#'@description Create a scatter plot of peat collapse data
+#'@param rangecor provide a list of logical arguments to trim data outliers
+#'@param params provide a list of variables to plot. This list is parsed two at a time for scplot. Otherwise can be provided as a subset of data.frame names
+#'@param dt data.frame
+#'@param bwfw character choice of "bw" or "fw"
+#'@param pwsw character choice of "pw" or "sw"
+scplot <- function(dt,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="all",pwsw="pw"){
   #dt<-cfieldall
   if(pwsw=="pw"){
     dt<-dt[dt$pwsw=="PW",]
@@ -85,10 +90,22 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
   }
 }
 
-tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",inout="in",inclegend=TRUE,tofile=FALSE){
+#'@name tsplot
+#'@title Time-series plot
+#'@description Time-series plot
+#'@export
+#'@param dt data.frame
+#'@param params character vector of column names
+#'@param bwfw character choice if "fw" or "bw"
+#'@param pwsw character choice of "pw" or "sw"
+#'@param inout character choice of "in" or "out"
+#'@param inclegend logical include legend?
+#'@param tofile logical save plot to disk?
+tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw = "fw", pwsw = "pw", inout = "in", inclegend = TRUE, tofile = FALSE){
+  #browser()
   #dt<-cfieldall
   #params=names(cfieldall)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",tofile=FALSE,inout = "in",inclegend=FALSE))#timeseries
-  parampos<-match(params,names(dt))
+  parampos <- match(params, names(dt))
   dt$chamber<-as.numeric(as.character(dt$chamber))
     
   if(bwfw=="bw"){
@@ -126,13 +143,14 @@ tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw=
     parampos<-parampos[-allna]
   }
   
-  library(zoo, quietly = TRUE,verbose = FALSE)
+  #library(zoo, quietly = TRUE, verbose = FALSE)
   for(i in parampos){
     #i<-parampos[1]  
     #print(names(dt)[i])
     curdt<-dt[,c("collect_date","chamber","trt",names(dt)[i])]
     #ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
-    ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
+    curdt[,4] <- as.numeric(curdt[,4])
+    ylim <- c(min(curdt[,4], na.rm = T) - (sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
     if(ylim[1] < 0){
       ylim[1] <- 0
     }
@@ -154,7 +172,7 @@ tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw=
         cmean$date<-as.POSIXct(cmean$date)
         
         #clean up x-axis labels
-        czoo<-zoo(cmean[,3],cmean$date)
+        czoo <- zoo::zoo(cmean[,3],cmean$date)
         times<-time(czoo)
         ticks<-seq(times[1],times[length(times)],by="months")
                 
@@ -245,11 +263,19 @@ hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
 
 #'@name mesotsplot
 #'@title plot mesocosm data
-#'@examples
-#'dt<-dt<-read.csv("inst/extdata/mesoall.csv")
-#'mesotsplot(dt,params=names(dt)[c(6,8,11,12,13,16,19,20,21)],pwsw="pw",tofile=FALSE)
+#'@description Plot mesocosm data as a time-series
+#'@import zoo
+#'@param dt data.frame
+#'@param params character vector of column names
+#'@param pwsw character choice of "pw" or "sw"
+#'@param tofile logical save plot to file?
+#'@param addlegend logical add legend?
+#'@examples \dontrun{
+#'dt <- read.csv("inst/extdata/mesoall.csv")
+#'mesotsplot(dt, params = names(dt)[c(6, 8, 11, 12, 13, 16, 19, 20, 21)], pwsw = "pw", tofile = FALSE)
+#'}
     
-mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend=TRUE){
+mesotsplot <- function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend=TRUE){
   #dt<-read.csv("inst/extdata/mesoall.csv")
   parampos<-match(params,names(dt))
   if(any(class(dt$date) == "factor")){
@@ -269,7 +295,7 @@ mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend
     parampos<-parampos[-allna]
   }
   
-  library(zoo, quietly = TRUE)
+  #library(zoo, quietly = TRUE)
   for(i in parampos){
     #i<-parampos[1]  
     #print(names(dt)[i])
@@ -299,7 +325,7 @@ mesotsplot<-function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlegend
       csd<-sds[sds[,"trt"]==j,]
       
       #clean up x-axis labels
-      czoo<-zoo(cmean[,3],cmean$date)
+      czoo<-zoo::zoo(cmean[,3],cmean$date)
       times<-time(czoo)
       ticks<-seq(times[1],times[length(times)],by="months")
       
