@@ -2,7 +2,7 @@
 
 
 #plot label key
-labelkey<-read.table(text="
+labelkey <- read.table(text = "
 ph,Onsite pH
 LPH,Lab pH
 salinity,Salinity
@@ -31,7 +31,11 @@ mean.salinity,Lab Salinity",sep=",")
 #'@param dt data.frame
 #'@param bwfw character choice of "bw" or "fw"
 #'@param pwsw character choice of "pw" or "sw"
-scplot <- function(dt,params=c("ph","LPH","salinity","CL"),rangecor=c("LPH > 6"),bwfw="all",pwsw="pw"){
+#'@examples \dontrun{
+#'dt <- read.csv(list.files("/home/jose/Documents/Science/Data/peatcollapse/", pattern = "fieldall*")[1], stringsAsFactors = FALSE)
+#'scplot(dt)
+#'}
+scplot <- function(dt, params = c("ph", "LPH", "salinity", "CL.mglCaCO3"), rangecor = c("LPH > 6"), bwfw = "all", pwsw = "pw"){
   #dt<-cfieldall
   if(pwsw=="pw"){
     dt<-dt[dt$pwsw=="PW",]
