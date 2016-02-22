@@ -4,7 +4,7 @@
 \alias{scplot}
 \title{scatter plot of peat collapse data}
 \usage{
-scplot(dt, params = c("ph", "LPH", "salinity", "CL"),
+scplot(dt, params = c("ph", "LPH", "salinity", "CL.mglCaCO3"),
   rangecor = c("LPH > 6"), bwfw = "all", pwsw = "pw")
 }
 \arguments{
@@ -20,5 +20,12 @@ scplot(dt, params = c("ph", "LPH", "salinity", "CL"),
 }
 \description{
 Create a scatter plot of peat collapse data
+}
+\examples{
+\dontrun{
+dt <- read.csv(list.files("/home/jose/Documents/Science/Data/peatcollapse/",
+pattern = "fieldall*")[1], stringsAsFactors = FALSE)
+scplot(dt)
+}
 }
 

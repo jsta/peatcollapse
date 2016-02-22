@@ -4,9 +4,7 @@
 \alias{tsplot}
 \title{Time-series plot}
 \usage{
-tsplot(dt, params = names(dt)[c(9, 12, 13, 14, 16, 17, 18, 19, 20, 22, 23)],
-  bwfw = "fw", pwsw = "pw", inout = "in", inclegend = TRUE,
-  tofile = FALSE)
+tsplot(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE)
 }
 \arguments{
 \item{dt}{data.frame}
@@ -25,5 +23,12 @@ tsplot(dt, params = names(dt)[c(9, 12, 13, 14, 16, 17, 18, 19, 20, 22, 23)],
 }
 \description{
 Time-series plot
+}
+\examples{
+cfieldall <- read.csv("/home/jose/Documents/Science/Data/peatcollapse/fieldallv9.csv",
+stringsAsFactors = FALSE)
+cfieldall$collect_date <- as.POSIXct(cfieldall$collect_date)
+tsplot(cfieldall, params = names(cfieldall)[c(9,12,13,14,16,18,19,22)],
+bwfw = "bw", pwsw = "pw", tofile = FALSE, inout = "in", inclegend = FALSE)
 }
 

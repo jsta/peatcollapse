@@ -32,7 +32,8 @@ mean.salinity,Lab Salinity",sep=",")
 #'@param bwfw character choice of "bw" or "fw"
 #'@param pwsw character choice of "pw" or "sw"
 #'@examples \dontrun{
-#'dt <- read.csv(list.files("/home/jose/Documents/Science/Data/peatcollapse/", pattern = "fieldall*")[1], stringsAsFactors = FALSE)
+#'dt <- read.csv(list.files("/home/jose/Documents/Science/Data/peatcollapse/",
+#' pattern = "fieldall*")[1], stringsAsFactors = FALSE)
 #'scplot(dt)
 #'}
 scplot <- function(dt, params = c("ph", "LPH", "salinity", "CL.mglCaCO3"), rangecor = c("LPH > 6"), bwfw = "all", pwsw = "pw"){
@@ -98,6 +99,7 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'@title Time-series plot
 #'@description Time-series plot
 #'@export
+#'@import dplyr
 #'@param dt data.frame
 #'@param params character vector of column names
 #'@param bwfw character choice if "fw" or "bw"
@@ -105,101 +107,73 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'@param inout character choice of "in" or "out"
 #'@param inclegend logical include legend?
 #'@param tofile logical save plot to disk?
-tsplot <- function(dt,params=names(dt)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw = "fw", pwsw = "pw", inout = "in", inclegend = TRUE, tofile = FALSE){
-  #browser()
-  #dt<-cfieldall
-  #params=names(cfieldall)[c(9,12,13,14,16,17,18,19,20,22,23)],bwfw="fw",pwsw="pw",tofile=FALSE,inout = "in",inclegend=FALSE))#timeseries
+#'@examples
+#'cfieldall <- read.csv("/home/jose/Documents/Science/Data/peatcollapse/fieldallv9.csv",
+#' stringsAsFactors = FALSE)
+#'cfieldall$collect_date <- as.POSIXct(cfieldall$collect_date)
+#'tsplot(cfieldall, params = names(cfieldall)[c(9,12,13,14,16,18,19,22)],
+#' bwfw = "bw", pwsw = "pw", tofile = FALSE, inout = "in", inclegend = FALSE)
+
+tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE){
+  
   parampos <- match(params, names(dt))
-  dt$chamber<-as.numeric(as.character(dt$chamber))
-    
-  if(bwfw=="bw"){
-    dt<-dt[dt$site=="BW",]
-    #dt$trt<-NA
-    #dt[dt$chamber>9,"trt"]<-"treatment"
-    #dt[is.na(dt$trt),"trt"]<-"control"
-    
-  }
-  if(bwfw=="fw"){
-    dt<-dt[dt$site=="FW",]
-    #dt$trt<-NA
-    #dt[dt$chamber>9,"trt"]<-"treatment"
-    #dt[is.na(dt$trt),"trt"]<-"control"
+  dt$chamber <- as.numeric(as.character(dt$chamber))
+  
+  dt <- dplyr::filter(dt, site == toupper(bwfw), pwsw == toupper(pwsw), inout == inout)
+  
+  allna <- which(sapply(parampos, function(x) !any(!is.na(dt[,x]))))
+  if(length(allna) > 0){
+    message(names(dt)[parampos[allna]], " is all na and has been removed")
+    parampos <- parampos[-allna]
   }
   
-  if(pwsw=="pw"){
-    dt<-dt[dt$pwsw=="PW",]
-  }
-  if(pwsw=="sw"){
-    dt<-dt[dt$pwsw=="SW",]
-  }
-  
-  if(inout=="in"){
-    dt<-dt[dt$inout=="in",]
-  }
-  
-  if(inout=="out"){
-    dt<-dt[dt$inout=="out",]
-  }
-  
-  allna<-which(sapply(parampos,function(x) !any(!is.na(dt[,x]))))
-  if(length(allna)>0){
-    message(names(dt)[parampos[allna]]," is all na and has been removed")
-    parampos<-parampos[-allna]
-  }
-  
-  #library(zoo, quietly = TRUE, verbose = FALSE)
   for(i in parampos){
-    #i<-parampos[1]  
-    #print(names(dt)[i])
-    curdt<-dt[,c("collect_date","chamber","trt",names(dt)[i])]
-    #ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
+    curdt <- dt[,c("collect_date", "chamber", "trt", names(dt)[i])]
     curdt[,4] <- as.numeric(curdt[,4])
-    ylim <- c(min(curdt[,4], na.rm = T) - (sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
+    ylim <- c(min(curdt[,4], na.rm = T) - (sd(curdt[,4], na.rm = T) * 2), max(curdt[,4], na.rm = T) + (sd(curdt[,4], na.rm = T) * 2))
     if(ylim[1] < 0){
       ylim[1] <- 0
     }
     
-    means<-aggregate(curdt[,4],by=list(curdt$collect_date,curdt$trt),function(x) mean(x,na.rm=T))
-    sds<-aggregate(curdt[,4],by=list(curdt$collect_date,curdt$trt),function(x) sd(x,na.rm=T))
-    names(means)<-names(sds)<-c("date","trt","value")
+    means <- aggregate(curdt[,4], by = list(curdt$collect_date, curdt$trt), function(x) mean(x, na.rm = T))
+    sds <- aggregate(curdt[,4], by = list(curdt$collect_date, curdt$trt), function(x) sd(x, na.rm = T))
+    names(means) <- names(sds) <- c("date", "trt", "value")
     
-    #browser()
-    if(tofile==TRUE){
-      outname<-toupper(paste(bwfw,pwsw,"_",names(dt)[i],sep=""))
-      png(file.path(paste(outname,".png",sep = "")),width=537,height=401)
+    if(tofile == TRUE){
+      outname <- toupper(paste(bwfw,pwsw, "_", names(dt)[i], sep = ""))
+      png(file.path(paste(outname, ".png", sep = "")), width = 537, height = 401)
     }
     
     for(j in unique(means[,"trt"])){
-      #j<-unique(means[,"trt"])[1]
-        cmean<-means[means[,"trt"]==j,]
-        csd<-sds[sds[,"trt"]==j,]
-        cmean$date<-as.POSIXct(cmean$date)
+        cmean <- means[means[,"trt"]==j,]
+        csd <- sds[sds[,"trt"] == j,]
+        cmean$date <- as.POSIXct(cmean$date)
         
         #clean up x-axis labels
-        czoo <- zoo::zoo(cmean[,3],cmean$date)
-        times<-time(czoo)
-        ticks<-seq(times[1],times[length(times)],by="months")
+        czoo <- zoo::zoo(cmean[,3], cmean$date)
+        times <- time(czoo)
+        ticks <- seq(times[1], times[length(times)], by = "months")
                 
-      if(j==unique(means[,"trt"])[1]){
-        plot(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=names(dt)[i],xaxt="n",xlab="",main=toupper(paste(bwfw,pwsw," ",min(cmean$date)," - ",max(cmean$date),sep="")))
-        suppressWarnings(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3))
-        axis(1,at=ticks,labels=strftime(ticks,"%b-%y"),tcl=-0.3,las=2)
-        if(inclegend==TRUE){
-        legend("topleft",c("control","treatment"),col=c("black","red"),pch=19)
+      if(j == unique(means[,"trt"])[1]){
+        
+        plot(cmean[,"date"], cmean[,"value"], pch = 19, ylim = ylim, ylab = names(dt)[i], xaxt = "n", xlab = "", main = toupper(paste(bwfw, pwsw, " ", min(cmean$date), " - ", max(cmean$date), sep = "")))
+        suppressWarnings(arrows(cmean[,"date"], cmean[,"value"] - csd[,"value"], cmean[,"date"], cmean[,"value"] + csd[,"value"], length = 0.05, angle = 90, code = 3))
+        axis(1, at = ticks, labels = strftime(ticks, "%b-%y"), tcl = -0.3, las = 2)
+        if(inclegend == TRUE){
+          legend("topleft", c("control", "treatment"), col = c("black", "red"), pch = 19)
         }
       }else{
-        points(cmean[,"date"],cmean[,"value"],pch=19,ylim=ylim,ylab=names(dt)[i],xaxt="n",col="red")
-        suppressWarnings(arrows(cmean[,"date"],cmean[,"value"]-csd[,"value"],cmean[,"date"],cmean[,"value"]+csd[,"value"],length=0.05,angle=90,code=3,col="red"))
+        points(cmean[,"date"], cmean[,"value"], pch = 19, ylim = ylim, ylab = names(dt)[i], xaxt = "n", col = "red")
+        suppressWarnings(arrows(cmean[,"date"], cmean[,"value"] - csd[,"value"], cmean[,"date"], cmean[,"value"] + csd[,"value"], length = 0.05, angle = 90, code = 3, col = "red"))
       }
     }
-    if(tofile==TRUE){
+    if(tofile == TRUE){
       dev.off()
     }
   }
 }
 
 hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
-  #dt<-cfieldall
   parampos<-match(params,names(dt))
   dt$chamber<-as.numeric(as.character(dt$chamber))
   #dt$trt<-NA

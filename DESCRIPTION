@@ -16,5 +16,5 @@ Suggests:
     testthat
 VignetteBuilder: knitr
 Imports:
-    RSQLite,readxl,reshape2,DBI,zoo
+    RSQLite,readxl,reshape2,DBI,zoo,dplyr
 RoxygenNote: 5.0.1
