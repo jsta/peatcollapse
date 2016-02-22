@@ -4,7 +4,8 @@
 \alias{tsplot}
 \title{Time-series plot}
 \usage{
-tsplot(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE)
+tsplot(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE,
+  print_xaxis = TRUE, print_main = TRUE)
 }
 \arguments{
 \item{dt}{data.frame}
@@ -20,6 +21,10 @@ tsplot(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE)
 \item{inclegend}{logical include legend?}
 
 \item{tofile}{logical save plot to disk?}
+
+\item{print_xaxis}{logical print xaxis?}
+
+\item{print_main}{logical print main label?}
 }
 \description{
 Time-series plot

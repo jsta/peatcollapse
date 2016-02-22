@@ -107,6 +107,8 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'@param inout character choice of "in" or "out"
 #'@param inclegend logical include legend?
 #'@param tofile logical save plot to disk?
+#'@param print_xaxis logical print xaxis?
+#'@param print_main logical print main label?
 #'@examples
 #'cfieldall <- read.csv("/home/jose/Documents/Science/Data/peatcollapse/fieldallv9.csv",
 #' stringsAsFactors = FALSE)
@@ -114,7 +116,7 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'tsplot(cfieldall, params = names(cfieldall)[c(9,12,13,14,16,18,19,22)],
 #' bwfw = "bw", pwsw = "pw", tofile = FALSE, inout = "in", inclegend = FALSE)
 
-tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE){
+tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE, print_xaxis = TRUE, print_main = TRUE){
   
   parampos <- match(params, names(dt))
   dt$chamber <- as.numeric(as.character(dt$chamber))
@@ -130,7 +132,7 @@ tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FAL
   for(i in parampos){
     curdt <- dt[,c("collect_date", "chamber", "trt", names(dt)[i])]
     curdt[,4] <- as.numeric(curdt[,4])
-    ylim <- c(min(curdt[,4], na.rm = T) - (sd(curdt[,4], na.rm = T) * 2), max(curdt[,4], na.rm = T) + (sd(curdt[,4], na.rm = T) * 2))
+    ylim <- c(min(curdt[,4], na.rm = T) - (sd(curdt[,4], na.rm = T) * 0.5), max(curdt[,4], na.rm = T) + (sd(curdt[,4], na.rm = T) * 0.5))
     if(ylim[1] < 0){
       ylim[1] <- 0
     }
@@ -156,9 +158,21 @@ tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FAL
                 
       if(j == unique(means[,"trt"])[1]){
         
-        plot(cmean[,"date"], cmean[,"value"], pch = 19, ylim = ylim, ylab = names(dt)[i], xaxt = "n", xlab = "", main = toupper(paste(bwfw, pwsw, " ", min(cmean$date), " - ", max(cmean$date), sep = "")))
+        main_label <- toupper(paste(bwfw, pwsw, " ", min(cmean$date), " - ", max(cmean$date), sep = ""))
+        
+        if(print_main == TRUE){
+          plot(cmean[,"date"], cmean[,"value"], pch = 19, ylim = ylim, ylab = names(dt)[i], xaxt = "n", xlab = "", main = main_label)
+          }else{
+            plot(cmean[,"date"], cmean[,"value"], pch = 19, ylim = ylim, ylab = names(dt)[i], xaxt = "n", xlab = "")          
+        }
+        
         suppressWarnings(arrows(cmean[,"date"], cmean[,"value"] - csd[,"value"], cmean[,"date"], cmean[,"value"] + csd[,"value"], length = 0.05, angle = 90, code = 3))
-        axis(1, at = ticks, labels = strftime(ticks, "%b-%y"), tcl = -0.3, las = 2)
+        
+        if(print_xaxis == TRUE){
+          #format_xaxis <- "%b-%y"
+          format_xaxis <- "%m-%Y"
+          axis(1, at = ticks, labels = strftime(ticks, format_xaxis), tcl = -0.3, las = 2)
+        }
         if(inclegend == TRUE){
           legend("topleft", c("control", "treatment"), col = c("black", "red"), pch = 19)
         }
