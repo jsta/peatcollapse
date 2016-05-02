@@ -121,7 +121,7 @@ tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FAL
   parampos <- match(params, names(dt))
   dt$chamber <- as.numeric(as.character(dt$chamber))
   
-  dt <- dplyr::filter(dt, site == toupper(bwfw), pwsw == toupper(pwsw), inout == inout)
+  dt <- dplyr::filter(dt, site == toupper(bwfw) & pwsw == toupper(get("pwsw")) & inout == get("inout"))
   
   allna <- which(sapply(parampos, function(x) !any(!is.na(dt[,x]))))
   if(length(allna) > 0){
