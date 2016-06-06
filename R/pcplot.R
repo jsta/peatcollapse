@@ -1,6 +1,4 @@
 
-
-
 #plot label key
 labelkey <- read.table(text = "
 ph,Onsite pH

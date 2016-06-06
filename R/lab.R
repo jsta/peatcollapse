@@ -42,9 +42,9 @@ create_labdb <- function(eddpath = file.path("Raw", "lab", "EDD"), dbname  = "pc
   
   edd <- clean_csv(eddpath = eddpath)
   
-  fullcentury <- gsub("/", "", sapply(edd$collect_date, function(x) strsplit(x, " ")[[1]][1]))
-  fullcentury <- sapply(fullcentury, function(x) gsub("20", "", x))
-  edd$collect_date <- date456posix(fullcentury, century = 20)
+  fullcentury <- sapply(edd$collect_date, function(x) strsplit(x, " ")[[1]][1])
+  fullcentury <- sapply(fullcentury, function(x) mdy2mmyyyy(x))
+  edd$collect_date <- as.POSIXct(strptime(fullcentury, format = "%m/%d/%Y"))
   
   eddlab <- RSQLite::dbConnect(DBI::dbDriver("SQLite"), dbname)
   invisible(RSQLite::dbWriteTable(conn = eddlab, name = tablename, value = edd, overwrite = TRUE))
@@ -70,6 +70,7 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
   q <- paste("SELECT matrix, location, sample_type, collect_date, acode, result, result_units_desc, mdl_final, cust_sample_id FROM", tablename, "WHERE sample_type LIKE 'SAMP' OR sample_type LIKE 'FD'")
   dt <- RSQLite::dbGetQuery(eddlab, q)
   
+  browser()  
   #remove one-off samplings
   dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-13" & dt$location != "S-199"),] #April 2015 pre-dose sampling retain S-199
   dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-15" & dt$location == "S-199"),] #April 2015 FW S-199
@@ -77,12 +78,8 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
   #adjust specific lines/dates
   dt[!is.na(dt$location) & dt$location == "BW-S-199" & as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-02-12", "location"] <- "FW-S-199" #mislabeled location code
   
-  #browser()
-  
   #dt[!is.na(dt$location) & dt$location == "BW-S-199" & as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-02-11", "collect_date"] <- as.numeric(as.POSIXct("2015-02-12")) #mislabeled date code
 
-  #browser()
-    
   #remove mdl flags from result field=================================#
   dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))] <- sapply(dt$result[which(is.na(suppressWarnings(as.numeric(dt$result))))], function(x) substring(x, 1, nchar(x)-1))
   dt$result <- as.numeric(dt$result)
@@ -128,7 +125,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   dt$collect_date <- as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "EST")
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
-  
+ 
   #return p-numbers associated with both samples and field duplicates
   id_info_dt <- apply(dt[,c("matrix", "location", "collect_date")], 1, function(x) paste0(x, collapse = ""))
   
@@ -291,7 +288,6 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
   dt$collect_date <- as.POSIXct(strftime(dt$collect_date, format = "%Y-%m-%d"))
   invisible(RSQLite::dbDisconnect(eddlab))
 
-  #browser()
   #dt[dt$location == "BW-S-199",]
   
 #dt[dt$cust_sample_id == "P76949-17",] #should be FW
@@ -404,14 +400,12 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
       dates <- fieldonsite[fieldonsite$site %in% x["site"], "collect_date"]
       if(length(dates[which.min(abs(difftime(x["collect_date"], dates)))]) < 1){
         as.POSIXct(x["collect_date"])
-        #browser()
       }else{
         dates[which.min(abs(difftime(x["collect_date"], dates)))]
-        #browser()
       }
     }
     
-    #browser()
+    
      lims$collect_date <- strftime(as.POSIXct(as.numeric(apply(lims, 1, function(x) align_dates(x, fieldonsite))), origin = "1970-01-01", tz = "NewYork"), format = "%Y-%m-%d")
      
      #test <- apply(lims, 1, function(x) align_dates(x, fieldonsite))
@@ -441,7 +435,6 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 #merge phosphorus======================================================#
   phosdt <- clean_p(ppath = ppath)
   phosdt$collect_date <- as.character(phosdt$collect_date)
-  #browser()
   dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
 
 #merge sulfide=========================================================#

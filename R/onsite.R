@@ -34,8 +34,8 @@ get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment =
       
       dt$sampling.date <- sapply(dt$sampling.date, mdy2mmyyyy)
       
-      names(dt)[names(dt)=="sampling.date"]<-"date"
-      dt$date<-as.POSIXct(strptime(dt$date,"%m/%d/%Y"))
+      names(dt)[names(dt) == "sampling.date"] <- "date"
+      dt$date <- as.POSIXct(strptime(dt$date, "%m/%d/%Y"))
       
       names(dt)[names(dt)=="core.."]<-"core"
       dt$core<-suppressWarnings(as.integer(gsub("/","",dt$core)))
