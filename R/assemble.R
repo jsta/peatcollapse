@@ -10,6 +10,8 @@
 #'@examples \dontrun{
 #'meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
 #' sulfpath = file.path("Raw", "lab"), tofile = FALSE)
+#' 
+#' meso <- assemble_meso(experiment = "soil")
 #' }
 assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
  
