@@ -231,7 +231,7 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   #choose project time interval=======================================#
   soilinterval <- c("2014-09-12", "2014-12-01")
   plantinterval <- c("2015-02-03", strftime(Sys.Date(), format = "%Y-%m-%d"))
-  if(project == "soil"){
+  if(project == "soilonly"){
     dt <- dt[dt$date >= soilinterval[1] & dt$date <= soilinterval[2],]
   }
   if(project == "soilplant"){
