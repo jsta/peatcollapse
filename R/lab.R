@@ -70,7 +70,6 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
   q <- paste("SELECT matrix, location, sample_type, collect_date, acode, result, result_units_desc, mdl_final, cust_sample_id FROM", tablename, "WHERE sample_type LIKE 'SAMP' OR sample_type LIKE 'FD'")
   dt <- RSQLite::dbGetQuery(eddlab, q)
   
-  browser()  
   #remove one-off samplings
   dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-13" & dt$location != "S-199"),] #April 2015 pre-dose sampling retain S-199
   dt <- dt[!(as.POSIXct(dt$collect_date, origin = "1970-01-01", tz = "NewYork") == "2015-04-15" & dt$location == "S-199"),] #April 2015 FW S-199
