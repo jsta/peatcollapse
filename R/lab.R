@@ -188,28 +188,28 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
                       ")
   }else{
     key <- read.table(header = FALSE,text = "
-                      1 elevcont                    
-                      3 elevcont
+                      1 elevinun                    
+                      3 elevinun
                       10 elevinun
                       12 elevinun
-                      17 elevcont
-                      19 elevcont
-                      2 elevinun
-                      4 elevinun
+                      17 elevinun
+                      19 elevinun
+                      2 elevcont
+                      4 elevcont
                       9 elevcont
                       11 elevcont
-                      18 elevinun
-                      20 elevinun
-                      6 ambcont
-                      8 ambcont
-                      14 ambcont
-                      16 ambcont
+                      18 elevcont
+                      20 elevcont
+                      6 ambinun
+                      8 ambinun
+                      14 ambinun
+                      16 ambinun
                       22 ambinun
                       24 ambinun
-                      5 ambinun
-                      7 ambinun
-                      13 ambinun
-                      15 ambinun
+                      5 ambcont
+                      7 ambcont
+                      13 ambcont
+                      15 ambcont
                       21 ambcont
                       23 ambcont
                       ")
