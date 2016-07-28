@@ -29,6 +29,7 @@ mean.salinity,Lab Salinity",sep=",")
 #'@param dt data.frame
 #'@param bwfw character choice of "bw" or "fw"
 #'@param pwsw character choice of "pw" or "sw"
+#'@importFrom graphics plot
 #'@examples \dontrun{
 #'dt <- read.csv(list.files("/home/jose/Documents/Science/Data/peatcollapse/",
 #' pattern = "fieldall*")[1], stringsAsFactors = FALSE)
@@ -98,6 +99,9 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'@description Time-series plot
 #'@export
 #'@import dplyr
+#'@importFrom graphics arrows legend points
+#'@importFrom grDevices dev.off png
+#'@importFrom stats sd time
 #'@param dt data.frame
 #'@param params character vector of column names
 #'@param bwfw character choice if "fw" or "bw"
@@ -107,12 +111,13 @@ bxplot<-function(dt,params=names(dt)[c(5:8,10:15,17:20,22:25)],bwfw="bw",pwsw="p
 #'@param tofile logical save plot to disk?
 #'@param print_xaxis logical print xaxis?
 #'@param print_main logical print main label?
-#'@examples
+#'@examples \dontrun{
 #'cfieldall <- read.csv("/home/jose/Documents/Science/Data/peatcollapse/fieldallv9.csv",
 #' stringsAsFactors = FALSE)
 #'cfieldall$collect_date <- as.POSIXct(cfieldall$collect_date)
 #'tsplot(cfieldall, params = names(cfieldall)[c(9,12,13,14,16,18,19,22)],
 #' bwfw = "bw", pwsw = "pw", tofile = FALSE, inout = "in", inclegend = FALSE)
+#' }
 
 tsplot <- function(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE, print_xaxis = TRUE, print_main = TRUE){
   
@@ -255,6 +260,7 @@ hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
 #'@title plot mesocosm data
 #'@description Plot mesocosm data as a time-series
 #'@import zoo
+#'@importFrom graphics axis
 #'@param dt data.frame
 #'@param params character vector of column names
 #'@param pwsw character choice of "pw" or "sw"

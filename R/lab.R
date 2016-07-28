@@ -470,6 +470,7 @@ get_fieldlab <- function(fieldonsite, eddpath = file.path("Raw", "lab", "EDD"), 
 #'@description Clean sulfide data
 #'@export
 #'@import readxl
+#'@importFrom stats aggregate
 #'@param sulfpath character file path to an .xlsx file
 #'@param sheet_nums numeric sheet indices containing raw data
 #'@examples \dontrun{
@@ -568,6 +569,7 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
 
 #'@name clean_p
 #'@title Clean phosphorus data
+#'@importFrom utils read.csv
 #'@export
 #'@description averages FDs, strips EBs
 #'@param ppath character file.path to raw phosphorus data
@@ -634,6 +636,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
 #'@param pwsw string choice of all, sw, pw
 #'@param sumpathlist list of file.paths to lims raw data files
 #'@import reshape2
+#'@importFrom stats na.pass
 #'@details EBs are discarded, only meso data has FDs
 clean_lims <- function(sumpathlist, proj = "field", pwsw = "all"){
   

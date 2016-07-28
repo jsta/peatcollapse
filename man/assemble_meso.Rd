@@ -26,6 +26,8 @@ Assemble mesocosm data file from onsite and lab data
 \dontrun{
 meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
 sulfpath = file.path("Raw", "lab"), tofile = FALSE)
+
+meso <- assemble_meso(experiment = "soilonly")
 }
 }
 

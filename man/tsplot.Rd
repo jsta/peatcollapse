@@ -30,10 +30,12 @@ tsplot(dt, params, bwfw, pwsw, inout, inclegend = TRUE, tofile = FALSE,
 Time-series plot
 }
 \examples{
+\dontrun{
 cfieldall <- read.csv("/home/jose/Documents/Science/Data/peatcollapse/fieldallv9.csv",
 stringsAsFactors = FALSE)
 cfieldall$collect_date <- as.POSIXct(cfieldall$collect_date)
 tsplot(cfieldall, params = names(cfieldall)[c(9,12,13,14,16,18,19,22)],
 bwfw = "bw", pwsw = "pw", tofile = FALSE, inout = "in", inclegend = FALSE)
+}
 }
 

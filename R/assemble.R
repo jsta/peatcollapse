@@ -7,6 +7,8 @@
 #'@param eddpath character folder.path to folder containing edd data
 #'@param tofile logical print results to file?
 #'@export
+#'@importFrom utils read.table write.csv
+#'@importFrom stats na.omit
 #'@examples \dontrun{
 #'meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
 #' sulfpath = file.path("Raw", "lab"), tofile = FALSE)
