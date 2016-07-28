@@ -21,10 +21,10 @@ The `peatcollapse` `R` package is distributed via a .tar.gz (analagous to .zip) 
 
 ```{r eval=FALSE}
 install.packages(c("RSQLite", "readxl", "reshape2", "DBI"))
+```
 
 `devtools::install_git("http://gitlab.com/jsta/peatcollapse.git",`
 `  credentials = git2r::cred_user_pass("<username>",`             `  getPass::getPass()))`
-```
 
 ## Assembling Databases
 
