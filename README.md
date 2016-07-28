@@ -17,8 +17,6 @@ The ultimate goal is to create seperate "database" summary files for the Field S
 
 ## Installing the `peatcollapse` package
 
-The `peatcollapse` `R` package is distributed via a .tar.gz (analagous to .zip) package archive file. This package contains the source code for package functions. In RStudio, it can be installed by navigating to Tools -> Install Packages... -> Install from: -> Package Archive File. Computers running the Windows operating system can only install binary .zip package archive files unless they have additional compiler software installed. The `peatcollapse` binary package can be installed by running the following commands from the R console:
-
 ```{r eval=FALSE}
 install.packages(c("RSQLite", "readxl", "reshape2", "DBI"))
 ```
