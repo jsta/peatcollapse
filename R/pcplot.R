@@ -241,7 +241,7 @@ hstplot<-function(dt,params=names(dt)[c(15)],bwfw="bw",pwsw="pw"){
     #}
     
     overlap<-ahist
-    for(j in 1:length(overlap$counts)){
+    for(j in seq_len(length(overlap$counts))){
       if(ahist$counts[j]>0 & bhist$counts[j]>0){
         overlap$counts[j]<-min(ahist$counts[j],bhist$counts[j])
       }else{
@@ -299,7 +299,7 @@ mesotsplot <- function(dt,params=names(dt)[c(11)],pwsw="pw",tofile=FALSE,addlege
     ylab<-as.character(labelkey[match(names(dt)[i],labelkey[,1]),2])
     ylim<-c(min(curdt[,4],na.rm=T)-(sd(curdt[,4],na.rm=T)*2),max(curdt[,4],na.rm=T)+(sd(curdt[,4],na.rm=T)*2))
     if(ylim[1]<0){
-      ylim[1]=0
+      ylim[1] <- 0
     }
     
     means<-aggregate(curdt[,4],by=list(curdt$date,curdt$trt),function(x) mean(x,na.rm=T))

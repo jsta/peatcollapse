@@ -23,9 +23,9 @@ get_mesoonsite <- function(onsitepath = file.path("Raw", "onsite"), experiment =
     
     full<-list()
     
-    for(i in 1:length(sumpathlist)){
+    for(i in seq_len(length(sumpathlist))){
       #i=1
-      dt <- read.csv(sumpathlist[i], skip = 1, stringsAsFactors = F)
+      dt <- read.csv(sumpathlist[i], skip = 1, stringsAsFactors = FALSE)
       names(dt)<-tolower(names(dt))
       
 #       if(any(names(dt)=="exp")){
@@ -110,7 +110,7 @@ get_fieldonsite <- function(onsitepath = file.path("Raw", "onsite")){
     
       full<-list()
       
-      for(i in 1:length(sumpathlist)){
+      for(i in seq_len(length(sumpathlist))){
         #browser()
         #i <- 1
         dt <- read.csv(sumpathlist[i], skip = 1, stringsAsFactors = F)

@@ -557,7 +557,7 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
   fielddt <- clean_sulfdt(fielddt)
   fielddt$sipper <- substring(fielddt$sipper, 1, 1)
   
-  fielddt <- aggregate(fielddt[, "sulfide.mm"], by = list(fielddt$date, fielddt$site, fielddt$chamber, fielddt$sipper), function(x) round(mean(x,na.rm=T), 4))
+  fielddt <- aggregate(fielddt[, "sulfide.mm"], by = list(fielddt$date, fielddt$site, fielddt$chamber, fielddt$sipper), function(x) round(mean(x,na.rm=TRUE), 4))
   
   fielddt <- reshape2::dcast(fielddt, Group.1 + Group.2 + Group.3 ~ Group.4, value.var="x", fun.aggregate=mean)
   names(fielddt) <- c("collect_date", "site", "chamber", "deepsulfide.mm", "shallowsulfide.mm")
@@ -581,12 +581,12 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   flist <- list.files(ppath, full.names = TRUE, include.dirs = TRUE)
   sumpath <- flist[grep("labp", tolower(flist))]
   
-  dt1 <- read.csv(sumpath, stringsAsFactors = F)
+  dt1 <- read.csv(sumpath, stringsAsFactors = FALSE)
   names(dt1) <- tolower(names(dt1))
   names(dt1)[3] <- "pwsw"
   
   dt1 <- dt1[nchar(dt1[, "date"]) > 0,]
-  dsplit <- matrix(unlist(strsplit(dt1$date,"/",fixed=T)),ncol=3,byrow=3)
+  dsplit <- matrix(unlist(strsplit(dt1$date,"/",fixed=TRUE)),ncol=3,byrow=3)
   
   pad0 <- function(x){
     if(nchar(x) < 2){
@@ -597,7 +597,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   }
   
   for(i in 1:2){
-    dsplit[,i]<-unlist(lapply(dsplit[,i],function(x) pad0(x)),use.names=F)
+    dsplit[,i]<-unlist(lapply(dsplit[,i],function(x) pad0(x)),use.names=FALSE)
   }
   
   dt1$datetime<-paste(dsplit[,1],"/",dsplit[,2],"/",dsplit[,3],sep="")
@@ -615,7 +615,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
     
     for(j in duplist){
       curdup <- which(uid == j)
-      dt1[curdup[1], 5:ncol(dt1)] <- apply(dt1[curdup, 5:ncol(dt1)], 2, function(x) mean(x, na.rm = T))
+      dt1[curdup[1], 5:ncol(dt1)] <- apply(dt1[curdup, 5:ncol(dt1)], 2, function(x) mean(x, na.rm = TRUE))
       dt1 <- dt1[-curdup[2:length(curdup)],]
       uid <- paste(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"], sep = "")
     }
@@ -644,7 +644,7 @@ clean_lims <- function(sumpathlist, proj = "field", pwsw = "all"){
   
   for(j in sumpathlist){
     
-    dt1 <- read.csv(j, stringsAsFactors=F)
+    dt1 <- read.csv(j, stringsAsFactors=FALSE)
     
     dt1 <- dt1[dt1$SAMPLE_TYPE == "SAMP" | dt1$SAMPLE_TYPE == "FD",][,c(1, 3, 4, 8, 19, 21, 22)]
     
@@ -657,7 +657,7 @@ clean_lims <- function(sumpathlist, proj = "field", pwsw = "all"){
     
     names(dt1) <- tolower(names(dt1))
     names(dt1)[which(names(dt1) %in% c("matrix", "collect_date"))] <- c("pwsw", "datetime")
-    dsplit <- matrix(unlist(strsplit(dt1$datetime, "/", fixed = T)), ncol = 3, byrow = 3)
+    dsplit <- matrix(unlist(strsplit(dt1$datetime, "/", fixed = TRUE)), ncol = 3, byrow = 3)
     
     pad0<-function(x){
       if(nchar(x)<2){
