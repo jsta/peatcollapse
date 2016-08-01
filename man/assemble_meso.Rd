@@ -5,13 +5,16 @@
 \title{Assemble mesocosm data file from onsite and lab data}
 \usage{
 assemble_meso(experiment = "soilplant", onsitepath = file.path("Raw",
-  "onsite"), sulfpath = file.path("Raw", "lab"), eddpath = file.path("Raw",
-  "lab", "EDD"), tofile = FALSE)
+  "onsite"), ppath = file.path("Raw", "lab", "phosphorus"),
+  sulfpath = file.path("Raw", "lab"), eddpath = file.path("Raw", "lab",
+  "EDD"), tofile = FALSE)
 }
 \arguments{
 \item{experiment}{character choice of "soilplant" or "soil"}
 
 \item{onsitepath}{character folder.path to folder containing onsite data}
+
+\item{ppath}{character folder.path to file containing phosphorus data}
 
 \item{sulfpath}{character folder.path to folder containing sulfide data}
 
@@ -28,6 +31,7 @@ meso <- assemble_meso(eddpath = file.path("Raw", "lab", "EDD"),
 sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 
 meso <- assemble_meso(experiment = "soilonly")
+meso <- assemble_meso(experiment = "soilonly", ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
 }
 }
 

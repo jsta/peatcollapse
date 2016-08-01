@@ -3,6 +3,7 @@
 #'@description Assemble mesocosm data file from onsite and lab data
 #'@param experiment character choice of "soilplant" or "soil"
 #'@param onsitepath character folder.path to folder containing onsite data
+#'@param ppath character folder.path to file containing phosphorus data
 #'@param sulfpath character folder.path to folder containing sulfide data
 #'@param eddpath character folder.path to folder containing edd data
 #'@param tofile logical print results to file?
@@ -14,8 +15,9 @@
 #' sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 #' 
 #' meso <- assemble_meso(experiment = "soilonly")
+#' meso <- assemble_meso(experiment = "soilonly", ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
 #' }
-assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
+assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
 
   mesolab <- get_mesolab(eddpath = eddpath, sulfpath = sulfpath, project = experiment)
 
