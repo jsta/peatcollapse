@@ -5,7 +5,8 @@
 \title{Get mesocosm lab data}
 \usage{
 get_mesolab(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"),
-  sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db")
+  ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw",
+  "lab"), dbname = "pc_eddlab.db")
 }
 \arguments{
 \item{project}{character choice of "soil" or "soilplant"}
@@ -21,7 +22,7 @@ Get mesocosm lab data
 }
 \examples{
 \dontrun{
-mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"))
+mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
 }
 }
 

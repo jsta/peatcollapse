@@ -19,7 +19,7 @@
 #' }
 assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
 
-  mesolab <- get_mesolab(eddpath = eddpath, sulfpath = sulfpath, project = experiment)
+  mesolab <- get_mesolab(eddpath = eddpath, ppath = ppath, sulfpath = sulfpath, project = experiment)
 
   mesoonsite <- get_mesoonsite(onsitepath = onsitepath, experiment = experiment)
 

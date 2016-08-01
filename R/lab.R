@@ -110,9 +110,9 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 #'@param dbname character file.path of edd database
 #'@export
 #'@examples \dontrun{
-#'mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"))
+#'mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
 #'}
-get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"), sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db"){
+get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db"){
   
   #update database and format data====================================#
   create_labdb(eddpath = eddpath)
@@ -238,6 +238,11 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
     dt <- dt[dt$date >= plantinterval[1] & dt$date <= plantinterval[2],]
   }
 
+  #merge phosphorus====================================================#
+  phosdt <- clean_p(ppath = ppath)
+  phosdt$collect_date <- as.character(phosdt$collect_date)
+  dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
+  
   #merge sulfide by approximating to the nearest wq date===============#
   sulfide <- clean_sulfide(sulfpath = sulfpath)$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
 
@@ -574,17 +579,17 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
 #'@description averages FDs, strips EBs
 #'@param ppath character file.path to raw phosphorus data
 #'@examples \dontrun{
-#'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus"))
+#'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
+#'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus", "Field_P_Thru_Dec15_QAed_labp.csv"))
 #'}
 clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   
-  flist <- list.files(ppath, full.names = TRUE, include.dirs = TRUE)
-  sumpath <- flist[grep("labp", tolower(flist))]
-  
-  dt1 <- read.csv(sumpath, stringsAsFactors = FALSE)
+  # flist <- list.files(ppath, full.names = TRUE, include.dirs = TRUE)
+  # sumpath <- flist[grep("labp", tolower(flist))]
+  dt1 <- read.csv(ppath, stringsAsFactors = FALSE)
   names(dt1) <- tolower(names(dt1))
-  names(dt1)[3] <- "pwsw"
-  
+  names(dt1)[3] <- "pwsw"  
+
   dt1 <- dt1[nchar(dt1[, "date"]) > 0,]
   dsplit <- matrix(unlist(strsplit(dt1$date,"/",fixed=TRUE)),ncol=3,byrow=3)
   
@@ -599,16 +604,49 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   for(i in 1:2){
     dsplit[,i]<-unlist(lapply(dsplit[,i],function(x) pad0(x)),use.names=FALSE)
   }
-  
+
   dt1$datetime<-paste(dsplit[,1],"/",dsplit[,2],"/",dsplit[,3],sep="")
   dt1$datetime<-as.POSIXct(strptime(dt1$datetime,"%m/%d/%Y"))
   dt1$date<-strftime(dt1$datetime,"%m/%d/%Y")
   dt1$date<-as.POSIXct(strptime(dt1$date,"%m/%d/%Y"))
-  dt1<-dt1[dt1$chamber>0 & dt1$chamber<199,] #strips ebs
-  dt1<-dt1[,c(1:3,6,7,10:13)]
   
+  if(any(names(dt1) == "chamber")){
+    dt1 <- dt1[dt1$chamber > 0 & dt1$chamber < 199,] #strips ebs  
+  }else{
+    dt1 <- dt1[dt1$pwsw != "EB",]
+  }
   
-  uid<-paste(dt1[,"date"],dt1[,"site"],dt1[,"pwsw"],dt1[,"chamber"],sep="")
+  generate_station <- function(dt1){
+    crypt <- dt1[, grep("crypt", names(dt1))]
+    core  <- dt1[, grep("core", names(dt1))]
+    core[grep("/", core)] <- NA
+    res <- rep(NA, length(core))
+    res[nchar(crypt) > 1] <- crypt[nchar(crypt) > 1] # head/mixing tanks
+    res[is.na(core) & nchar(crypt) == 1] <- paste0("C",
+      crypt[is.na(core) & nchar(crypt) == 1])        # crypt sw
+    res[is.na(res)] <- paste0("C", crypt[is.na(res)], "C",
+      core[is.na(res)])                              # crypt pw
+  
+    dt1 <- dt1[, -c(grep("crypt", names(dt1)), grep("core", names(dt1)))]
+    dt1 <- cbind(res, dt1)
+    names(dt1)[1] <- "station"
+    
+    dt1
+  }
+  
+  if(length(grep("crypt", names(dt1))) > 0){
+    dt1 <- generate_station(dt1)
+  }
+
+  # dt1 <- dt1[,c(1:3,6,7,10:13)]
+  
+  if(any(names(dt1) == "chamber")){
+    dt1 <- dt1[,c("date", "site", "pwsw", "chamber", "mean.salinity", "srp.um.l", "tdp.um.l", "srp.ppb", "tdp.ppb")]
+    uid <- paste0(dt1[,"date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"])
+  }else{
+    dt1 <- dt1[,c("date", "site", "pwsw", "station", "srp.um.l", "tdp.um.l", "srp.ppb", "tdp.ppb")]
+    uid <- paste0(dt1[,"date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"station"])
+  }
   
   if(any(duplicated(uid))){#any FDs?
     duplist<-unique(uid[duplicated(uid)])
@@ -617,7 +655,11 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
       curdup <- which(uid == j)
       dt1[curdup[1], 5:ncol(dt1)] <- apply(dt1[curdup, 5:ncol(dt1)], 2, function(x) mean(x, na.rm = TRUE))
       dt1 <- dt1[-curdup[2:length(curdup)],]
-      uid <- paste(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"], sep = "")
+      if(any(names(dt1) == "chamber")){
+        uid <- paste0(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"])
+      }else{
+        uid <- paste0(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"station"])
+      }
     }
   }
   dt1 <- dt1[order(dt1$date),]
