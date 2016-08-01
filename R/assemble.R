@@ -17,7 +17,7 @@
 #' meso <- assemble_meso(experiment = "soilonly")
 #' meso <- assemble_meso(experiment = "soilonly", ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
 #' }
-assemble_meso <- function(experiment = "soilplant", onsitepath = file.path("Raw", "onsite"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
+assemble_meso <- function(experiment = "soilonly", onsitepath = file.path("Raw", "onsite"), ppath = file.path("Raw", "lab", "phosphorus", ""), sulfpath =  file.path("Raw", "lab"), eddpath = file.path("Raw", "lab", "EDD"), tofile = FALSE){
 
   mesolab <- get_mesolab(eddpath = eddpath, ppath = ppath, sulfpath = sulfpath, project = experiment)
 

@@ -110,7 +110,7 @@ clean_lab <- function(dbname = "pc_eddlab.db", tablename = "eddlab", begindate =
 #'@param dbname character file.path of edd database
 #'@export
 #'@examples \dontrun{
-#'mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
+#'mesolab <- get_mesolab(project = "soilonly", eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
 #'}
 get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus"), sulfpath = file.path("Raw", "lab"), dbname = "pc_eddlab.db"){
   
@@ -240,8 +240,8 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
 
   #merge phosphorus====================================================#
   phosdt <- clean_p(ppath = ppath)
-  phosdt$collect_date <- as.character(phosdt$collect_date)
-  dt <- merge(dt, phosdt, by = c("collect_date", "site", "matrix","chamber", "inout"), all.x = TRUE)
+  phosdt$date <- as.character(phosdt$date)
+  dt <- merge(dt, phosdt, by = c("date", "station", "pwsw"), all.x = TRUE)
   
   #merge sulfide by approximating to the nearest wq date===============#
   sulfide <- clean_sulfide(sulfpath = sulfpath)$mesodt[,c("date","core","crypt","sulfide.mm", "datesulfide")]
@@ -635,6 +635,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
   }
   
   if(length(grep("crypt", names(dt1))) > 0){
+    is_meso <- TRUE
     dt1 <- generate_station(dt1)
   }
 
@@ -644,6 +645,7 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
     dt1 <- dt1[,c("date", "site", "pwsw", "chamber", "mean.salinity", "srp.um.l", "tdp.um.l", "srp.ppb", "tdp.ppb")]
     uid <- paste0(dt1[,"date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"])
   }else{
+    is_meso <- TRUE
     dt1 <- dt1[,c("date", "site", "pwsw", "station", "srp.um.l", "tdp.um.l", "srp.ppb", "tdp.ppb")]
     uid <- paste0(dt1[,"date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"station"])
   }
@@ -658,17 +660,19 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
       if(any(names(dt1) == "chamber")){
         uid <- paste0(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"chamber"])
       }else{
+        is_meso <- TRUE
         uid <- paste0(dt1[, "date"], dt1[,"site"], dt1[,"pwsw"], dt1[,"station"])
       }
     }
   }
   dt1 <- dt1[order(dt1$date),]
   
-  names(dt1)[names(dt1) %in% c("date", "pwsw")] <- c("collect_date", "matrix")
+  if(!is_meso){
+    names(dt1)[names(dt1) %in% c("date", "pwsw")] <- c("collect_date", "matrix")
+    dt1$inout <- "in"
+  }
   
-  dt1$inout <- "in"
   dt1
-  
 }
 
 #'@name clean_lims

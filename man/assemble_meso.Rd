@@ -4,8 +4,8 @@
 \alias{assemble_meso}
 \title{Assemble mesocosm data file from onsite and lab data}
 \usage{
-assemble_meso(experiment = "soilplant", onsitepath = file.path("Raw",
-  "onsite"), ppath = file.path("Raw", "lab", "phosphorus"),
+assemble_meso(experiment = "soilonly", onsitepath = file.path("Raw",
+  "onsite"), ppath = file.path("Raw", "lab", "phosphorus", ""),
   sulfpath = file.path("Raw", "lab"), eddpath = file.path("Raw", "lab",
   "EDD"), tofile = FALSE)
 }

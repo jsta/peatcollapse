@@ -22,7 +22,7 @@ Get mesocosm lab data
 }
 \examples{
 \dontrun{
-mesolab <- get_mesolab(eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
+mesolab <- get_mesolab(project = "soilonly", eddpath = file.path("Raw", "lab", "EDD"), ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"), sulfpath = file.path("Raw", "lab"))
 }
 }
 
