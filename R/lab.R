@@ -241,6 +241,30 @@ get_mesolab <- function(project = "soilplant", eddpath = file.path("Raw", "lab",
   #merge phosphorus====================================================#
   phosdt <- clean_p(ppath = ppath)
   phosdt$date <- as.character(phosdt$date)
+  align_p_dates <- function(pdate_pwsw_station, dtdate, dt_pwsw, dt_station){
+    #browser()
+    
+    pdate <- as.POSIXct(pdate_pwsw_station[1])
+    p_pwsw <- pdate_pwsw_station[2]
+    p_station <- pdate_pwsw_station[3]
+    dtdate <- dtdate[dt_pwsw == p_pwsw & dt_station == p_station]
+    
+    if(any(abs(difftime(pdate, dtdate)) < 12)){
+      # print(dtdate[which.min(abs(difftime(pdate, dtdate)))])
+      dtdate[which.min(abs(difftime(pdate, dtdate)))]
+    }else{
+      # print(pdate)
+      pdate
+    }
+  }
+
+  # browser()  
+  
+  phosdt$date <- strftime(as.POSIXct(apply(data.frame(cbind(phosdt$date, phosdt$pwsw, as.character(phosdt$station)), stringsAsFactors = FALSE), 1, function(x) align_p_dates(x, dt$date, dt$pwsw, dt$station)), origin = "1970-01-01", tz = "EST"), format = "%Y-%m-%d")
+  
+  # browser()
+  # dt[dt$date == "2015-04-07" & dt$station == "C2C5",]
+  # phosdt[phosdt$date == "2015-04-07" & phosdt$station == "C2C5",]
   dt <- merge(dt, phosdt, by = c("date", "station", "pwsw"), all.x = TRUE)
   
   #merge sulfide by approximating to the nearest wq date===============#
@@ -579,6 +603,7 @@ clean_sulfide <- function(sulfpath = file.path("Raw", "lab"), sheet_nums = NA){
 #'@description averages FDs, strips EBs
 #'@param ppath character file.path to raw phosphorus data
 #'@examples \dontrun{
+#'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Feb_Sept2015_Mesocosm.csv"))
 #'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
 #'phosphorus <- clean_p(ppath = file.path("Raw", "lab", "phosphorus", "Field_P_Thru_Dec15_QAed_labp.csv"))
 #'}
@@ -620,13 +645,16 @@ clean_p <- function(ppath = file.path("Raw", "lab", "phosphorus")){
     crypt <- dt1[, grep("crypt", names(dt1))]
     core  <- dt1[, grep("core", names(dt1))]
     core[grep("/", core)] <- NA
-    res <- rep(NA, length(core))
-    res[nchar(crypt) > 1] <- crypt[nchar(crypt) > 1] # head/mixing tanks
-    res[is.na(core) & nchar(crypt) == 1] <- paste0("C",
-      crypt[is.na(core) & nchar(crypt) == 1])        # crypt sw
-    res[is.na(res)] <- paste0("C", crypt[is.na(res)], "C",
-      core[is.na(res)])                              # crypt pw
-  
+    if(length(grep("station", names(dt1))) > 0){
+      res <- dt1[,grep("station", names(dt1))]
+    }else{
+      res <- rep(NA, length(core))
+      res[nchar(crypt) > 1] <- crypt[nchar(crypt) > 1] # head/mixing tanks
+      res[is.na(core) & nchar(crypt) == 1] <- paste0("C",
+        crypt[is.na(core) & nchar(crypt) == 1])        # crypt sw
+      res[is.na(res)] <- paste0("C", crypt[is.na(res)], "C",
+        core[is.na(res)])                              # crypt pw
+    }
     dt1 <- dt1[, -c(grep("crypt", names(dt1)), grep("core", names(dt1)))]
     dt1 <- cbind(res, dt1)
     names(dt1)[1] <- "station"

@@ -32,6 +32,7 @@ sulfpath = file.path("Raw", "lab"), tofile = FALSE)
 
 meso <- assemble_meso(experiment = "soilonly")
 meso <- assemble_meso(experiment = "soilonly", ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Sept_Dec2014_Mesocosm.csv"))
+meso <- assemble_meso(experiment = "soilplant", ppath = file.path("Raw", "lab", "phosphorus", "Salt_P_Feb_Sept2015_Mesocosm.csv"))
 }
 }
 
